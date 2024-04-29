@@ -1,5 +1,5 @@
 #include <iostream>
-// #include "cache.h"
+#include "cache.h"
 #include "db_client.h"
 
 
@@ -37,6 +37,7 @@ int main() {
         }
         std::cout << std::endl;
     }
+
 
     return 0;
 }

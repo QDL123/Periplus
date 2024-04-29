@@ -1,7 +1,11 @@
+#ifndef DB_CLIENT_H
+#define DB_CLIENT_H
+
 #include <faiss/IndexFlat.h>
 
 struct DBClient {
     size_t d;
+    size_t size;
     std::unique_ptr<faiss::Index> index;
     std::unique_ptr<float[]> data;
 
@@ -11,3 +15,5 @@ struct DBClient {
 
     void search(faiss::idx_t n, float *xq, faiss::idx_t k, float *x);
 };
+
+#endif
