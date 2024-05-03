@@ -19,24 +19,24 @@ private:
     char data_[max_length];
     // asio::streambuf data_;
 
-    void read_command() {
-        auto self(shared_from_this());
-        asio::async_read_until(this->socket_, this->data, "\r\n",
-            [this, self](std::error_code ec, std::size_t length) {
-                if (!ec) {
-                    std::istream is(&data_);
-                    std::string command;
-                    std::getline(is, command);
-                    if (!line.empty() && line.back() == '\r') {
-                        line.pop_back();
-                    }
+    // void read_command() {
+    //     auto self(shared_from_this());
+    //     asio::async_read_until(this->socket_, this->data, "\r\n",
+    //         [this, self](std::error_code ec, std::size_t length) {
+    //             if (!ec) {
+    //                 std::istream is(&data_);
+    //                 std::string command;
+    //                 std::getline(is, command);
+    //                 if (!line.empty() && line.back() == '\r') {
+    //                     line.pop_back();
+    //                 }
 
-                    // Inform the cache we received a command, and ask it what to do next. 
+    //                 // Inform the cache we received a command, and ask it what to do next. 
 
                     
-                }
-            });
-    }
+    //             }
+    //         });
+    // }
     void do_read() {
         // maintain a shared pointer to the session in the lambda to prevent the session from destructing before
         // the callback completes

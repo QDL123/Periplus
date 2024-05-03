@@ -1,4 +1,4 @@
-#include "cache.h"
+#include "core.h"
 #include "db_client.h"
 
 #include <math.h>
@@ -12,7 +12,7 @@
 #include <faiss/IndexIDMap.h>
 
 
-Cache::Cache(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal) : d{d}, db{db}, nCells{nCells}, nTotal{nTotal}  {
+Core::Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal) : d{d}, db{db}, nCells{nCells}, nTotal{nTotal}  {
     // TODO: use make_shared
     this->quantizer = std::shared_ptr<faiss::IndexFlatL2>(new faiss::IndexFlatL2(this->d));
     this->index = std::unique_ptr<faiss::IndexIVFFlat>(new faiss::IndexIVFFlat(this->quantizer.get(), this->d, this->nCells));
@@ -25,7 +25,7 @@ Cache::Cache(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal
 
 
 // Another layer will receive a stream of data, select a subset, and pass it here.
-void Cache::train(faiss::idx_t n, const float* x) {
+void Core::train(faiss::idx_t n, const float* x) {
     // Check this in case the training is done manually for testing purposes
     if (!this->index->is_trained) {
         this->index->train(n, x);
@@ -36,7 +36,7 @@ void Cache::train(faiss::idx_t n, const float* x) {
     this->quantizer->reconstruct_n(0, this->nCells, this->centroids.get());
 }
 
-size_t Cache::getCellSize(float *x, faiss::idx_t centroidIndex, size_t lowerBound, size_t upperBound) {
+size_t Core::getCellSize(float *x, faiss::idx_t centroidIndex, size_t lowerBound, size_t upperBound) {
     size_t mid = (lowerBound + upperBound) / 2;
     faiss::idx_t midCentroid;
     float distance;
@@ -66,7 +66,7 @@ size_t Cache::getCellSize(float *x, faiss::idx_t centroidIndex, size_t lowerBoun
     }
 }
 
-void Cache::loadCell(faiss::idx_t centroidIndex) {
+void Core::loadCell(faiss::idx_t centroidIndex) {
     // Ensure the index has been trained before we try to load any data
     assert(this->index->is_trained);
     // TODO: Look up the distribution to get a better guess here
@@ -117,7 +117,7 @@ void Cache::loadCell(faiss::idx_t centroidIndex) {
     // TODO: update cell residency status
 }
 
-void Cache::search(size_t n, float *xq, size_t k, float *embeddings, bool *cacheHits) {
+void Core::search(size_t n, float *xq, size_t k, float *embeddings, bool *cacheHits) {
     // Check residency status
 
     faiss::idx_t centroidIndices[n];
@@ -144,7 +144,7 @@ void Cache::search(size_t n, float *xq, size_t k, float *embeddings, bool *cache
     }
 }
 
-void Cache::evictCell(faiss::idx_t centroidIndex) {
+void Core::evictCell(faiss::idx_t centroidIndex) {
     if (this->residenceStatuses[centroidIndex] == -1) {
         throw std::runtime_error("Eviciting a cell not in residence");
     }
@@ -173,7 +173,7 @@ void Cache::evictCell(faiss::idx_t centroidIndex) {
 }
 
 
-Cache::~Cache() {
+Core::~Core() {
     // These deletes should not be necessary if smart pointers are being used.
     // delete this->quantizer;
     // delete this->index;

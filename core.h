@@ -1,5 +1,5 @@
-#ifndef CACHE_H
-#define CACHE_H
+#ifndef CORE_H
+#define CORE_H
 
 #include "db_client.h"
 
@@ -7,7 +7,7 @@
 #include <faiss/IndexFlat.h>
 #include <faiss/IndexIDMap.h>
 
-struct Cache {
+struct Core {
 
     static constexpr const double nGuessCoeff = 2;
     static constexpr const double guessScalar = 1.5;
@@ -25,7 +25,7 @@ struct Cache {
     // size of nx * d 
     std::vector< std::vector <float> > embeddings;
 
-    Cache(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal);
+    Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal);
 
     size_t getCellSize(float *x, faiss::idx_t centroidIndex, size_t prevNGuess, size_t nGuess);
 
@@ -40,7 +40,7 @@ struct Cache {
     void evictCell(faiss::idx_t centroidIndex);
 
 
-    ~Cache();
+    ~Core();
 };
 
 

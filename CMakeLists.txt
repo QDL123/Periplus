@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14) # Set the minimum required version of CMake
 
-project(CacheTest) # Name of your project
+project(CoreTest) # Name of your project
 
 # Set C++17 as the standard for the project
 set(CMAKE_CXX_STANDARD 17)
@@ -19,8 +19,8 @@ find_package(Threads REQUIRED)
 
 # List all the source files required for the test executable, including dependencies
 set(TEST_SOURCES
-    test_cache.cpp
-    cache.cpp
+    test_core.cpp
+    core.cpp
     db_client.cpp
 )
 
@@ -50,7 +50,7 @@ target_link_libraries(tests PRIVATE
 # Define source files for the new executable that uses Boost.Asio
 set(ASIO_SOURCES
     server.cpp  # Replace with your actual file that uses Boost.Asio
-    cache.cpp
+    core.cpp
     db_client.cpp
 )
 
