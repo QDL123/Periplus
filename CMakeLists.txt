@@ -6,8 +6,16 @@ project(CacheTest) # Name of your project
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_definitions(-DASIO_STANDALONE)
+
 # Find the Catch2 package
 find_package(Catch2 3 REQUIRED)
+
+# # Find Boost package, specifically looking for the system and thread components which are commonly used with Asio
+# find_package(Boost 1.70 REQUIRED COMPONENTS system thread)
+
+# Add the threading package to handle any threading needs of Asio
+find_package(Threads REQUIRED)
 
 # List all the source files required for the test executable, including dependencies
 set(TEST_SOURCES
@@ -35,6 +43,31 @@ link_directories(
 # target_link_libraries(tests PRIVATE Catch2::Catch2WithMain faiss omp)
 target_link_libraries(tests PRIVATE
     Catch2::Catch2WithMain
+    /opt/homebrew/opt/faiss/lib/libfaiss.dylib
+    /opt/homebrew/opt/libomp/lib/libomp.dylib
+)
+
+# Define source files for the new executable that uses Boost.Asio
+set(ASIO_SOURCES
+    server.cpp  # Replace with your actual file that uses Boost.Asio
+    cache.cpp
+    db_client.cpp
+)
+
+# Add another executable that will use Boost.Asio
+add_executable(asio_app ${ASIO_SOURCES})
+
+# Specify the directories where the compiler can find headers for the Asio app
+target_include_directories(asio_app PRIVATE
+    ${Boost_INCLUDE_DIRS}
+    /opt/homebrew/opt/faiss/include
+    /opt/homebrew/opt/libomp/include
+    /opt/homebrew/opt/asio/include
+)
+
+# Link libraries to the new executable
+target_link_libraries(asio_app PRIVATE
+    ${Boost_LIBRARIES}
     /opt/homebrew/opt/faiss/lib/libfaiss.dylib
     /opt/homebrew/opt/libomp/lib/libomp.dylib
 )
