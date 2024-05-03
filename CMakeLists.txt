@@ -49,7 +49,9 @@ target_link_libraries(tests PRIVATE
 
 # Define source files for the new executable that uses Boost.Asio
 set(ASIO_SOURCES
+    driver.cpp
     server.cpp  # Replace with your actual file that uses Boost.Asio
+    session.cpp
     core.cpp
     db_client.cpp
 )
