@@ -52,6 +52,7 @@ set(ASIO_SOURCES
     driver.cpp
     server.cpp  # Replace with your actual file that uses Boost.Asio
     session.cpp
+    cache.cpp
     core.cpp
     db_client.cpp
 )

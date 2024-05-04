@@ -17,6 +17,9 @@ def main():
             if message.lower() == 'exit':
                 break
 
+            # Append "\r\n" to the message
+            message += "\r\n"
+
             # Send data
             sock.sendall(message.encode())
 
