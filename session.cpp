@@ -1,3 +1,4 @@
+#include "cache.h"
 #include "session.h"
 
 #include <iostream>
@@ -6,18 +7,18 @@
 #include <asio/ts/buffer.hpp>
 
 
-Session::Session(asio::ip::tcp::socket socket) : socket_(std::move(socket)) {}
+Session::Session(asio::ip::tcp::socket socket, Cache *cache) : socket_(std::move(socket)), cache(cache), args(nullptr) {}
 
 void Session::start() {
-    this->do_read();
+    this->read_command();
 }
 
-void Session::read_command(std::function<void(std::shared_ptr<Session> session, std::string)> process_command) {
+void Session::read_command() {
     // do we still need this pointer if the cache is long lived and holds a reference to the session?
     // I believe the answer is yes in this async model because the caller will return right away unless we use coroutines
     auto self(shared_from_this());
     asio::async_read_until(this->socket_, this->data_stream_, "\r\n",
-        [this, self, process_command](std::error_code ec, std::size_t length) {
+        [this, self](std::error_code ec, std::size_t length) {
             if (!ec) {
                 std::istream is(&this->data_stream_);
                 std::string command;
@@ -26,11 +27,30 @@ void Session::read_command(std::function<void(std::shared_ptr<Session> session, 
                     command.pop_back();
                 }
 
-
                 // Inform the cache we received a command, and ask it what to do next. 
-                process_command(self, command);
+                this->cache->processCommand(self, command);
             }
         });
+}
+
+
+void Session::read_args(std::shared_ptr<Args> args) {
+    std::cout << "Waiting for command args" << std::endl;
+    this->args = args;
+    auto self(shared_from_this());
+    asio::async_read_until(this->socket_, this->data_stream_, "\r\n",
+        [this, self, &args](std::error_code ec, std::size_t length) {
+            std::cout << "Reading command args" << std::endl;
+            if (!ec) {
+                std::istream is(&this->data_stream_);
+                std::cout << "Deserializing" << std::endl;
+                this->args->deserialize(is);
+                std::cout << "Processing args" << std::endl;
+                this->cache->process_args(self);
+            } else {
+                std::cerr << ec << std::endl;
+            }
+    });
 }
 
 void Session::do_read() {

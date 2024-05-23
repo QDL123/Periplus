@@ -14,7 +14,8 @@ int main() {
         std::cout << "Server starting up!" << std::endl;
 
         std::vector<std::thread> threads;
-        for(int i = 0; i < std::thread::hardware_concurrency(); ++i) {
+        // TODO: Add multithreading
+        for(int i = 0; i < 1 /* std::thread::hardware_concurrency()*/; ++i) {
             threads.emplace_back([&io_context](){
                 io_context.run();
             });

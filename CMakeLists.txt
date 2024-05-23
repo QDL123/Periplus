@@ -55,6 +55,7 @@ set(ASIO_SOURCES
     cache.cpp
     core.cpp
     db_client.cpp
+    args.cpp
 )
 
 # Add another executable that will use Boost.Asio

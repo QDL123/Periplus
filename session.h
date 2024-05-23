@@ -1,5 +1,14 @@
+/*
+The session object is responsible for abstracting away everything to do with the network away from the 
+caching logic. It knows how to read and write data, and holds a reference to the cache which it uses
+to process incoming data and then figure out what data to send back.
+*/
+
 #ifndef SESSION_H
 #define SESSION_H
+
+#include "args.h"
+#include "cache.h"
 
 #include <asio.hpp>
 #include <asio/ts/buffer.hpp>
@@ -9,17 +18,22 @@
 class Session : public std::enable_shared_from_this<Session> {
 public:
 
-    explicit Session(asio::ip::tcp::socket socket);
+    // TODO: Add cache weak ptr here (Sessions should not impact the cache lifecycle which is owned by the server)
+    // This will alleviate the need to pass callback functions everywhere.
+    explicit Session(asio::ip::tcp::socket socket, Cache *cache);
 
     void start();
-    void read_command(std::function<void(std::shared_ptr<Session> session, std::string)> process_command);
-
+    void read_command();
+    void read_args(std::shared_ptr<Args> args);
     void do_write(std::size_t length);
 
     enum { max_length = 1024 };
     char data_[max_length];
+    std::shared_ptr<Args> args;
+    Cache *cache;
 
     ~Session();
+
 private:
     asio::ip::tcp::socket socket_;
     asio::streambuf data_stream_;
