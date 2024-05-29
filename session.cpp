@@ -20,12 +20,14 @@ void Session::read_command() {
     asio::async_read_until(this->socket_, this->data_stream_, "\r\n",
         [this, self](std::error_code ec, std::size_t length) {
             if (!ec) {
+                std::cout << "Buffer size before command read: " << this->data_stream_.size() << std::endl;
                 std::istream is(&this->data_stream_);
                 std::string command;
                 std::getline(is, command);
                 if (!command.empty() && command.back() == '\r') {
                     command.pop_back();
                 }
+                std::cout << "Buffer size after command getline: " << this->data_stream_.size() << std::endl;
 
                 // Inform the cache we received a command, and ask it what to do next. 
                 this->cache->processCommand(self, command);
@@ -34,20 +36,48 @@ void Session::read_command() {
 }
 
 
+void Session::read_static_args(std::shared_ptr<Args> args) {
+    this->args = args;
+    auto self(shared_from_this());
+    asio::async_read(this->socket_, this->data_stream_, asio::transfer_exactly(this->args->get_static_size()),
+        [this, self, &args](std::error_code ec, std::size_t bytes_transferred) {
+            if (!ec) {
+                // this->data_stream_.commit(bytes_transferred);
+                std::istream is(&this->data_stream_);
+                this->args->deserialize_static(is);
+                // Read the dynamic data (size +2 is for the end delimiter (2 chars 1 byte each))
+                std::cout << "args size: " << this->args->size << std::endl;
+                asio::async_read(this->socket_, this->data_stream_, asio::transfer_exactly(this->args->size + 2 - this->data_stream_.size()), 
+                    [this, self, &args](std::error_code ec, std::size_t length) {
+                        if (!ec) {
+                            std::istream dynamic_is(&this->data_stream_);
+                            this->args->deserialize_dynamic(dynamic_is);
+                            this->cache->process_args(self);
+                        } else {
+                            std::cout << "AN ERROR HAS OCCURRED DURING DYNAMIC DESERIALIZATION" << std::endl;
+                            std::cerr << ec << std::endl;
+                        }   
+                });
+            } else {
+                std::cout << "AN ERROR HAS OCCURRED DURING STATIC DESERIALIZATION" << std::endl;
+                std::cerr << ec << std::endl;
+            }
+    });
+}
+
+
 void Session::read_args(std::shared_ptr<Args> args) {
-    std::cout << "Waiting for command args" << std::endl;
     this->args = args;
     auto self(shared_from_this());
     asio::async_read_until(this->socket_, this->data_stream_, "\r\n",
         [this, self, &args](std::error_code ec, std::size_t length) {
-            std::cout << "Reading command args" << std::endl;
+            std::cout << "Length of args: " << length << std::endl;
             if (!ec) {
                 std::istream is(&this->data_stream_);
-                std::cout << "Deserializing" << std::endl;
                 this->args->deserialize(is);
-                std::cout << "Processing args" << std::endl;
                 this->cache->process_args(self);
             } else {
+                std::cout << "AN ERROR HAS OCCURRED DURING STATIC DESERIALIZATION" << std::endl;
                 std::cerr << ec << std::endl;
             }
     });

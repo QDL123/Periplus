@@ -12,8 +12,8 @@ Cache::Cache() : status(UNINITIALIZED), core(nullptr) {}
 // Should the command be passed in or should session.read_command be called?
 void Cache::processCommand(std::shared_ptr<Session> session, std::string command) {
     // Determine the whether we can process the command
+    std::string output("No message written");
     std::cout << "Received command: " << command << std::endl;
-    std::string output("No message wr itten");
     switch (this->status) {
         case UNINITIALIZED:
             if (command == std::string("INITIALIZE")) {
@@ -24,15 +24,26 @@ void Cache::processCommand(std::shared_ptr<Session> session, std::string command
                 output = std::string("Cannot process ") + command + std::string(" command");
             }
             break;
+        case INITIALIZED:
+            if (command == std::string("INITIALIZE")) {
+                output = "Processing initialize command!";
+                std::shared_ptr<InitializeArgs> args = std::make_shared<InitializeArgs>();
+                session->read_args(args);
+            } else if (command == std::string("TRAIN")) {
+                output = "Processing train command!";
+                std::shared_ptr<TrainArgs> args = std::make_shared<TrainArgs>();
+                // session->read_args(args);
+                session->read_static_args(args);
+            } else {
+                output = std::string("Cannot process ") + command + std::string(" command");
+            }
         default:
             output = "Cache somehow in an initialized state";
             break;
     }
-    std::cout << "Received command: " << command << std::endl;
     
     // Send back update that the command is being processed
     output.copy(session->data_, 1024);
-    std::cout << output << std::endl;
 }
 
 
@@ -43,6 +54,9 @@ void Cache::process_args(std::shared_ptr<Session> session) {
     if (session->args->get_command() == INITIALIZE) {
         std::cout << "Starting initialization" << std::endl;
         this->initialize(session);
+    } else if (session->args->get_command() == TRAIN) {
+        std::cout << "Starting training" << std::endl;
+        this->train(session);
     }
 }
 
@@ -54,7 +68,6 @@ size_t Cache::determineNCells(size_t nTotal) {
 
 void Cache::initialize(std::shared_ptr<Session> session) {
     // TODO: create DB client
-    std::cout << "Creating the db client" << std::endl;
     std::shared_ptr<InitializeArgs> args = std::dynamic_pointer_cast<InitializeArgs>(session->args);
 
     std::shared_ptr<DBClient> db_client = std::make_shared<DBClient>(args->d);
@@ -69,7 +82,6 @@ void Cache::initialize(std::shared_ptr<Session> session) {
 
     session->do_write(output.size());
 
-    std::cout << "Setting state to INITIALIZED" << std::endl;
     this->status = INITIALIZED;
 
     std::cout << "Listening for more commands" << std::endl;
@@ -77,6 +89,24 @@ void Cache::initialize(std::shared_ptr<Session> session) {
     session->read_command();
 
     // Last reference should args should go out of scope, causing it to destruct
+}
+
+void Cache::train(std::shared_ptr<Session> session) {
+    std::shared_ptr<TrainArgs> args = std::dynamic_pointer_cast<TrainArgs>(session->args);
+
+    faiss::idx_t nTrainingVecs = (faiss::idx_t)args->size / sizeof(float) / this->core->d;
+    // TODO: Make this async so the server can respond while the core is training.
+    this->core->train(nTrainingVecs, args->training_data.get());
+    assert(this->core->index->is_trained);
+    this->status = READY;
+
+    std::string output("Trained cache");
+    output.copy(session->data_, 1024);
+
+    session->do_write(output.size());
+
+    // Listen for more commands
+    session->read_command();
 }
 
 Cache::~Cache() {

@@ -30,6 +30,7 @@ public:
     void process_args(std::shared_ptr<Session> session);
     static size_t determineNCells(size_t nTotal); 
     void initialize(std::shared_ptr<Session> session);
+    void train(std::shared_ptr<Session> session);
     ~Cache();
 
 private:

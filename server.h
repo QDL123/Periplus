@@ -10,6 +10,7 @@ public:
     TcpServer(asio::io_context& io_context, short port);
 
 private:
+    std::vector<std::shared_ptr<Session>> sessions;
     asio::ip::tcp::acceptor acceptor_;
     std::unique_ptr<Cache> cache;
 

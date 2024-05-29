@@ -19,14 +19,14 @@ TcpServer::TcpServer(asio::io_context& io_context, short port)
 }
 
 void TcpServer::do_accept() {
-    std::cout << "Should be listening for connections" << std::endl;
     this->acceptor_.async_accept(
         [this](std::error_code ec, asio::ip::tcp::socket socket) {
-            std::cout << "Accepting connection!" << std::endl;
             if (!ec) {
                 auto session = std::make_shared<Session>(std::move(socket), this->cache.get());
+                this->sessions.push_back(session);
                 session->start();
                 // TODO: track sessions here and start timers for closing them if not used
+                // How should session lifetimes be managed.
             }
 
             // Listen for more connections

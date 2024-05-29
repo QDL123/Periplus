@@ -1,0 +1,12 @@
+[
+    {
+        "command": "INITIALIZE",
+        "args": [2, 1024, 1000000, "https://some-url.com/load-data"],
+        "expected_response": "Initialized cache"
+    },
+    {
+        "command": "TRAIN",
+        "args": [],
+        "expected_response": "Trained cache"
+    }
+]

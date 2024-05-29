@@ -10,6 +10,7 @@ to process incoming data and then figure out what data to send back.
 #include "args.h"
 #include "cache.h"
 
+#include <vector>
 #include <asio.hpp>
 #include <asio/ts/buffer.hpp>
 #include <asio/ts/internet.hpp>
@@ -25,8 +26,10 @@ public:
     void start();
     void read_command();
     void read_args(std::shared_ptr<Args> args);
+    void read_static_args(std::shared_ptr<Args> args);
     void do_write(std::size_t length);
 
+    std::vector<char> buffer;
     enum { max_length = 1024 };
     char data_[max_length];
     std::shared_ptr<Args> args;

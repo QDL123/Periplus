@@ -15,10 +15,23 @@ def handle_initialize():
     return struct.pack(fmt, d, max_mem, nTotal, url_size) + "\n".encode('latin1') + db_url.encode('latin1')
 
 
+def handle_train():
+    # Take user input for an array of floats
+    floats_input = input("Enter a list of floats separated by spaces: ")
+    float_list = [float(item) for item in floats_input.split()]
+
+    # Calculate the number of bytes for the float array
+    num_bytes = len(float_list) * 4  # Each float (using 'f' format) is 4 bytes
+
+    # Pack data as the number of bytes followed by the array of floats
+    return struct.pack('I', num_bytes) + struct.pack(f'{len(float_list)}f', *float_list)
+
+
 
 # Mapping of commands to handling functions
 command_handlers = {
     'INITIALIZE': handle_initialize,
+    'TRAIN': handle_train,
 }
 
 def main():
