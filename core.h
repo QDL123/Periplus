@@ -2,6 +2,7 @@
 #define CORE_H
 
 #include "db_client.h"
+#include "data.h"
 
 #include <faiss/IndexIVF.h>
 #include <faiss/IndexFlat.h>
@@ -23,19 +24,23 @@ struct Core {
     std::shared_ptr<DBClient> db;    
 
     // size of nx * d 
-    std::vector< std::vector <float> > embeddings;
+    // std::vector< std::vector <float> > embeddings;
+
+    std::vector<Data> data;
 
     Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal);
 
-    size_t getCellSize(float *x, faiss::idx_t centroidIndex, size_t prevNGuess, size_t nGuess);
+    size_t getCellSize(Data *x, faiss::idx_t centroidIndex, size_t prevNGuess, size_t nGuess);
 
     // May not need this is we're training the 
     // whole dataset at once. This may just be a wrapper
     void train(faiss::idx_t n, const float* x);
 
+    void loadCellWithVec(std::shared_ptr<float[]> xq);
+
     void loadCell(faiss::idx_t centroidIndex);
 
-    void search(size_t n, float *xq, size_t k, float *embeddings, bool *cacheHits);
+    void search(size_t n, float *xq, size_t k, Data *data, int *cacheHits);
 
     void evictCell(faiss::idx_t centroidIndex);
 

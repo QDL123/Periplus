@@ -27,7 +27,10 @@ public:
     void read_command();
     void read_args(std::shared_ptr<Args> args);
     void read_static_args(std::shared_ptr<Args> args);
+    void updated_read_args(std::shared_ptr<Args> args);
+    void read_dynamic_args(std::shared_ptr<Args> args);
     void do_write(std::size_t length);
+    void sync_write(std::size_t length);
 
     std::vector<char> buffer;
     enum { max_length = 1024 };

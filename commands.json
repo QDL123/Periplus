@@ -8,5 +8,19 @@
         "command": "TRAIN",
         "args": [],
         "expected_response": "Trained cache"
+    },
+    {
+        "command": "LOAD",
+        "args": [1, 1],
+        "expected_response": "Loaded cell"
+    },
+    {
+        "command": "SEARCH",
+        "args": {
+            "n": 1,
+            "k": 1,
+            "xq": [1, 1]
+        },
+        "expected_response": ""
     }
 ]

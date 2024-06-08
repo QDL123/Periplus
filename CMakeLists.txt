@@ -22,6 +22,7 @@ set(TEST_SOURCES
     test_core.cpp
     core.cpp
     db_client.cpp
+    data.cpp
 )
 
 # Add an executable for the tests
@@ -56,6 +57,7 @@ set(ASIO_SOURCES
     core.cpp
     db_client.cpp
     args.cpp
+    data.cpp
 )
 
 # Add another executable that will use Boost.Asio

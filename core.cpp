@@ -1,5 +1,6 @@
 #include "core.h"
 #include "db_client.h"
+#include "data.h"
 
 #include <math.h>
 #include <iostream>
@@ -36,11 +37,26 @@ void Core::train(faiss::idx_t n, const float* x) {
     this->quantizer->reconstruct_n(0, this->nCells, this->centroids.get());
 }
 
-size_t Core::getCellSize(float *x, faiss::idx_t centroidIndex, size_t lowerBound, size_t upperBound) {
+void Core::loadCellWithVec(std::shared_ptr<float[]> xq) {
+    faiss::idx_t centroidIndex;
+    float distance;
+    this->quantizer->search(1, xq.get(), 1, &distance, &centroidIndex);
+    if (this->residenceStatuses[centroidIndex] > -1) {
+        // The cell has already been loaded. Must be evicted before it is loaded again
+        // TODO: Make this a customer error and catch it in the calling method to send the message back to
+        // the client
+        throw std::runtime_error("Attempting to load cell already in residence. Must evict before loading again.");
+    }
+    std::cout << "Calling core loadCell func" << std::endl;
+    this->loadCell(centroidIndex);
+}
+
+size_t Core::getCellSize(Data *x, faiss::idx_t centroidIndex, size_t lowerBound, size_t upperBound) {
     size_t mid = (lowerBound + upperBound) / 2;
     faiss::idx_t midCentroid;
     float distance;
-    this->quantizer->search(1, &x[mid * this->d], 1, &distance, &midCentroid);
+    // this->quantizer->search(1, &x[mid * this->d], 1, &distance, &midCentroid);
+    this->quantizer->search(1, x[mid].embedding.get(), 1, &distance, &midCentroid);
     if (midCentroid != centroidIndex) {
         if (mid - 1 < lowerBound) {
             // mid - 1 is only < lowerBound if lowerBound == mid. The condition above guarantees there are no vectors
@@ -50,7 +66,8 @@ size_t Core::getCellSize(float *x, faiss::idx_t centroidIndex, size_t lowerBound
         }
         faiss::idx_t neighborCentroid;
         float neighborDistance;
-        this->quantizer->search(1, &x[(mid - 1) * this->d], 1, &neighborDistance, &neighborCentroid);
+        // TODO: Investigate if we can only receive embeddings while trying to determine cellSize
+        this->quantizer->search(1, x[mid - 1].embedding.get(), 1, &neighborDistance, &neighborCentroid);
         if (neighborCentroid == centroidIndex) {
             return mid;
         } else {
@@ -73,7 +90,8 @@ void Core::loadCell(faiss::idx_t centroidIndex) {
     double ratio = double(1) / double(this->nCells);
     size_t prevNGuess = 0;
     size_t nGuess = size_t(nGuessCoeff * ratio * this->nTotal);
-    float *x = new float[this->d * nGuess];
+    // float *x = new float[this->d * nGuess];
+    Data *x = new Data[nGuess];
     faiss::idx_t furthestCentroid;
     float distances[1];
     // TODO: CHANGE THIS INTERFACE SO IT RETURNS THE SIZE OF THE RESULT IN CASE IT'S Smaller than nGuess;
@@ -81,7 +99,8 @@ void Core::loadCell(faiss::idx_t centroidIndex) {
     faiss::idx_t centroid;
     float distance;
 
-    float *furthestVec = &x[(nGuess - 1) * this->d];
+    // float *furthestVec = &x[(nGuess - 1) * this->d];
+    float *furthestVec = x[nGuess - 1].embedding.get();
     this->quantizer->search(1, furthestVec, 1, distances, &furthestCentroid);
     while (furthestCentroid == centroidIndex) {
         // Recompute nGuess
@@ -89,35 +108,41 @@ void Core::loadCell(faiss::idx_t centroidIndex) {
         nGuess = size_t(prevNGuess * guessScalar);
         // Reallocate x to fit new nGuess
         delete[] x;
-        x = new float[this->d * nGuess];
+        // x = new float[this->d * nGuess];
+        x = new Data[nGuess];
         // Load data and determine furthest centroid
         this->db->search(1, &this->centroids[centroidIndex * this->d], nGuess, x);
-        float *furthestVec = &x[(nGuess - 1) * this->d];
+        // float *furthestVec = &x[(nGuess - 1) * this->d];
+        float *furthestVec = x[nGuess - 1].embedding.get();
         this->quantizer->search(1, furthestVec, 1, distances, &furthestCentroid);
     }
 
     size_t cellSize = this->getCellSize(x, centroidIndex, prevNGuess, nGuess);
-    
     // Need to append data into the data store.
     for (int i = 0; i < cellSize; ++i) {
-        std::vector<float> embedding(x + (i * this->d), x + ((i + 1) * this->d));
-        this->embeddings.push_back(embedding);
+        this->data.push_back(x[i]);
     }
 
     // Add the data to the index
+    // Looks like we were trying to do this another way to take advantage of the fact 
+    // that we are adding to a single invlist. We can look into optimizing this later.
     // this->index->add((faiss::idx_t)cellSize, x);
-    faiss::idx_t ids[cellSize];
-    for (faiss::idx_t i; i < cellSize; i++) {
-        ids[i] = i;
+    // faiss::idx_t ids[cellSize];
+    // for (faiss::idx_t i; i < cellSize; i++) {
+    //     ids[i] = i;
+    // }
+    // this->idMap->add_with_ids((faiss::idx_t)cellSize, x, ids);
+    for (size_t i = 0; i < cellSize; i++) {
+        this->index->add(1, x[i].embedding.get());
     }
-    this->idMap->add_with_ids((faiss::idx_t)cellSize, x, ids);
     this->residenceStatuses[centroidIndex] = (int32_t)cellSize;
     delete[] x;
 
     // TODO: update cell residency status
 }
 
-void Core::search(size_t n, float *xq, size_t k, float *embeddings, bool *cacheHits) {
+// TODO: return distances also
+void Core::search(size_t n, float *xq, size_t k, Data *data, int *cacheHits) {
     // Check residency status
 
     faiss::idx_t centroidIndices[n];
@@ -129,16 +154,22 @@ void Core::search(size_t n, float *xq, size_t k, float *embeddings, bool *cacheH
     for (int i = 0; i < n; i++) {
         if (this->residenceStatuses[centroidIndices[i]] > -1) {
             // cell is in residence
-            cacheHits[i] = true;
+            cacheHits[i] = 0;
             faiss::idx_t labels[k];
             float distances[k];
             this->index->search(1, &xq[i], k, distances, labels);
             for (int j = 0; j < k; j++) {
-                // std::cout << "embedding value: " << this->embeddings[labels[j]] << std::endl;
-                memcpy(&embeddings[(i * k * this->d) + (j * this->d)], this->embeddings[labels[j]].data(), sizeof(float) * this->d);
+                if (labels[j] == -1) {
+                    // Fewer than k results, padded with -1
+                    data[(i * k) + j] = Data();
+                } else {
+                    // Use copy constructor
+                    data[(i * k) + j] = this->data[labels[j]];
+                    cacheHits[i]++;
+                }
             }
         } else {
-            cacheHits[i] = false;
+            cacheHits[i] = -1;
             // Should we copy any data into the embeddigns array or leave it random data?
         }
     }
@@ -165,7 +196,8 @@ void Core::evictCell(faiss::idx_t centroidIndex) {
     // Remove the data
     std:sort(indicesToRemove.begin(), indicesToRemove.end(), std::greater<faiss::idx_t>());
     for (faiss::idx_t index : indicesToRemove) {
-        this->embeddings.erase(embeddings.begin() + index);
+        // this->embeddings.erase(embeddings.begin() + index);
+        this->data.erase(data.begin() + index);
     }
 
     // Update residency status

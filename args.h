@@ -18,11 +18,10 @@ enum Command {
 };
 
 struct Args {
-
-    const static size_t static_size;
     size_t size;
+    size_t static_size;
 
-    virtual size_t get_static_size() = 0;
+    virtual size_t get_static_size() { return static_size; };
     virtual Command get_command() = 0;
     virtual void deserialize(std::istream& is) = 0;
     virtual void deserialize_static(std::istream& is) = 0;
@@ -44,10 +43,19 @@ protected:
         char buffer[sizeof(T)];
         is.read(buffer, sizeof(T));
         if (!is) {
-            // std::cerr << "Failed to read the required number of bytes." << std::endl;
+            std::cerr << "Failed to read the required number of bytes." << std::endl;
             return;
         }
         memcpy(arg, buffer, sizeof(T));
+    }
+
+    void read_static_delimiter(std::istream& is) {
+        char temp;
+        this->read_arg<char>(&temp, is);
+        if (temp != '\n') {
+            std::cerr << "Expected static delimiter (\\n) but didn't find it" << std::endl;
+            // TODO: somehow abandon command (Probably throw an error that gets caught in the cache layer)
+        }
     }
 
     void read_end_delimiter(std::istream& is) {
@@ -70,8 +78,8 @@ struct InitializeArgs : Args {
     const static size_t static_size = 24;
     std::shared_ptr<char[]> db_url;
 
-    virtual size_t get_static_size() override;
-    virtual Command get_command() override;
+    virtual size_t get_static_size() override { return static_size; };
+    virtual Command get_command() override { return INITIALIZE; };
     virtual void deserialize(std::istream& is) override;
     virtual void deserialize_static(std::istream& is) override;
     virtual void deserialize_dynamic(std::istream& is) override;
@@ -82,8 +90,33 @@ struct TrainArgs : Args {
     const static size_t static_size = 9;
     std::shared_ptr<float[]> training_data;
 
-    virtual size_t get_static_size() override;
-    virtual Command get_command() override;
+    virtual size_t get_static_size() override { return static_size; };
+    virtual Command get_command() override { return TRAIN; };
+    virtual void deserialize(std::istream& is) override;
+    virtual void deserialize_static(std::istream& is) override;
+    virtual void deserialize_dynamic(std::istream& is) override;
+};
+
+
+struct LoadArgs : Args {
+    const static size_t static_size = 9;
+    std::shared_ptr<float[]> xq;
+    
+    virtual size_t get_static_size() override { return static_size; }
+    virtual Command get_command() override { return LOAD; };
+    virtual void deserialize(std::istream& is) override;
+    virtual void deserialize_static(std::istream& is) override;
+    virtual void deserialize_dynamic(std::istream& is) override;
+};
+
+struct SearchArgs : Args {
+    const static size_t static_size = 1;
+    size_t n;
+    size_t k;
+    std::shared_ptr<float[]> xq;
+
+    virtual size_t get_static_size() override { return static_size; }
+    virtual Command get_command() override { return SEARCH; }
     virtual void deserialize(std::istream& is) override;
     virtual void deserialize_static(std::istream& is) override;
     virtual void deserialize_dynamic(std::istream& is) override;

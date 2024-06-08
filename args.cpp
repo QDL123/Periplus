@@ -34,9 +34,6 @@ void InitializeArgs::deserialize_dynamic(std::istream& is) {
     std::cout << "ERROR: INITIALIZE DESERIALIZE_DYNAMIC WAS CALLED" << std::endl;
 }
 
-size_t InitializeArgs::get_static_size() { return static_size; }
-
-Command InitializeArgs::get_command() { return INITIALIZE; }
 
 
 void TrainArgs::deserialize(std::istream& is) {
@@ -60,15 +57,13 @@ void TrainArgs::deserialize(std::istream& is) {
     this->read_end_delimiter(is);
 
     std::cout << "TRAIN:  " << nFloats << std::endl;
-    // for (size_t i = 0; i < nFloats; i++) {
-    //     std::cout << this->training_data[i] << ", ";
-    // }
     std::cout << std::endl;
 }
 
 void TrainArgs::deserialize_static(std::istream& is) {
     std::cout << "Deserializing static data" << std::endl;
     this->read_arg<size_t>(&this->size, is);
+    std::cout << "TRAINING DYNAMIC SIZE: " << this->size << std::endl;
     // std::cout << "Size of size_t: " << sizeof(this->size) << std::endl;
     char temp;
     this->read_arg<char>(&temp, is);
@@ -87,6 +82,53 @@ void TrainArgs::deserialize_dynamic(std::istream& is) {
     this->read_end_delimiter(is);
 }
 
-size_t TrainArgs::get_static_size() { return static_size; }
 
-Command TrainArgs::get_command() { return TRAIN; }
+void LoadArgs::deserialize(std::istream& is) {
+    std::cout << "Deserializing load args" << std::endl;
+    this->read_arg<size_t>(&this->size, is);
+    this->read_static_delimiter(is);
+    size_t nFloats = this->size / sizeof(float);
+    this->xq = this->read_dynamic_data<float>(is, nFloats);
+
+    std::cout << "Loading cell containing vector: ";
+    for (size_t i = 0; i < nFloats; i++) {
+        std::cout << this->xq[i] << ", ";
+    }
+    std::cout << std::endl;
+    
+    this->read_end_delimiter(is);
+}
+
+void LoadArgs::deserialize_static(std::istream& is) {
+    std::cout << "Deserialize static load args" << std::endl;
+}
+
+void LoadArgs::deserialize_dynamic(std::istream& is) {
+    std::cout << "Deserialize dynamic load args" << std::endl;
+}
+
+
+// Command LoadArgs::get_command() { return LOAD; }
+void SearchArgs::deserialize(std::istream& is) {
+    std::cout << "Deserialize search args" << std::endl;
+}
+
+void SearchArgs::deserialize_static(std::istream& is) {
+    std::cout << "Deserialize static search args" << std::endl;
+    this->read_arg<size_t>(&this->n, is);
+    this->read_arg<size_t>(&this->k, is);
+    this->read_arg<size_t>(&this->size, is);
+
+
+    std::cout << "this->n: " << this->n << std::endl;
+    std::cout << "this->k: " << this->k << std::endl;
+    std::cout << "this->size: " << this->size << std::endl;
+    this->read_static_delimiter(is);
+}
+
+void SearchArgs::deserialize_dynamic(std::istream& is) {
+    std::cout << "Deserialize dynamic search args" << std::endl;
+    size_t nFloats = this->size / sizeof(float);
+    this->xq = this->read_dynamic_data<float>(is, nFloats);
+    this->read_end_delimiter(is);
+} 
