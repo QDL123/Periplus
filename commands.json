@@ -1,7 +1,7 @@
 [
     {
         "command": "INITIALIZE",
-        "args": [2, 1024, 1000000, "https://some-url.com/load-data"],
+        "args": [2, 1024, 1000000, "http://localhost:8000/v1/load_cell"],
         "expected_response": "Initialized cache"
     },
     {
@@ -21,6 +21,15 @@
             "k": 1,
             "xq": [1, 1]
         },
-        "expected_response": ""
+        "expected_response": [
+            [
+                {
+                    "id": "SOME ID",
+                    "embedding": [0.920756995677948, 0.973625123500824],
+                    "document": "document: 60381",
+                    "metadata": { "index": 60381 }
+                }
+            ]
+        ]
     }
 ]

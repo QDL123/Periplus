@@ -88,7 +88,8 @@ void Cache::initialize(std::shared_ptr<Session> session) {
     // TODO: create DB client
     std::shared_ptr<InitializeArgs> args = std::dynamic_pointer_cast<InitializeArgs>(session->args);
 
-    std::shared_ptr<DBClient> db_client = std::make_shared<DBClient>(args->d);
+    std::shared_ptr<DBClient> db_client = std::make_shared<DBClient>(args->d, args->db_url);
+    // std::shared_ptr<DBClient> db_client = std::make_shared<DBClient>(args->d);
 
     // Calculate nCells
     size_t nCells = determineNCells(args->nTotal);
@@ -114,37 +115,38 @@ void Cache::train(std::shared_ptr<Session> session) {
     faiss::idx_t nTrainingVecs = (faiss::idx_t)args->size / sizeof(float) / this->core->d;
 
     // TODO: REMOVE THIS ////////////////////////////////
-    std::vector<Data> dataset;
-    std::cout << "generating dataset" << std::endl;
-    for (size_t i = 0; i < nTrainingVecs; i++) {
-        char id[2];
-        id[0] = 'i';
-        id[1] = 'd';
+    // Load the mock client manually in the test file, otherwise use the actual client with no load function
+    // std::vector<Data> dataset;
+    // std::cout << "generating dataset" << std::endl;
+    // for (size_t i = 0; i < nTrainingVecs; i++) {
+    //     char id[2];
+    //     id[0] = 'i';
+    //     id[1] = 'd';
         
-        float embedding[this->core->d];
+    //     float embedding[this->core->d];
 
-        for (size_t j = 0; j < this->core->d; j++) {
-            embedding[j] = args->training_data[i * this->core->d + j];
-        }
+    //     for (size_t j = 0; j < this->core->d; j++) {
+    //         embedding[j] = args->training_data[i * this->core->d + j];
+    //     }
 
-        char document[3];
-        document[0] = 'd';
-        document[1] = 'o';
-        document[2] = 'c';
+    //     char document[3];
+    //     document[0] = 'd';
+    //     document[1] = 'o';
+    //     document[2] = 'c';
 
-        char metadata[4];
-        metadata[0] = 'm';
-        metadata[1] = 'e';
-        metadata[2] = 't';
-        metadata[3] = 'a';
+    //     char metadata[4];
+    //     metadata[0] = 'm';
+    //     metadata[1] = 'e';
+    //     metadata[2] = 't';
+    //     metadata[3] = 'a';
 
-        // std::cout << "About to construct data struct" << std::endl;
-        dataset.push_back(Data(2, this->core->d, 3, 4, id, embedding, document, metadata));
-    }
-    std::cout << "loading db" << std::endl;
+    //     // std::cout << "About to construct data struct" << std::endl;
+    //     dataset.push_back(Data(2, this->core->d, 3, 4, id, embedding, document, metadata));
+    // }
+    // std::cout << "loading db" << std::endl;
 
-    this->core->db->loadDB(nTrainingVecs, dataset.data());
-    std::cout << "Finished loading db" << std::endl;
+    // this->core->db->loadDB(nTrainingVecs, dataset.data());
+    // std::cout << "Finished loading db" << std::endl;
     /////////////////////////////////////////////////////
 
     // TODO: Make this async so the server can respond while the core is training.

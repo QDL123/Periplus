@@ -9,6 +9,11 @@
 #include <faiss/IndexFlat.h>
 
 
+TEST_CASE("Test Test", "[TEST TEST]") {
+    std::cout << "TEST TEST" << std::endl;
+}
+
+
 void generate_data(size_t d, const float *centroids, std::vector<Data>& data, std::vector<float>& embeddings) {
     // Generate data
     for (int i = 0; i < 8; i += 2) {
@@ -54,7 +59,7 @@ void generate_data(size_t d, const float *centroids, std::vector<Data>& data, st
 TEST_CASE("Construct Cache Core", "[Core]") {
     size_t d = 10;
     float nTotal = 10000;
-    std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient(d));
+    std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient_Mock(d));
     Core core(d, client, 100, nTotal);
 
     REQUIRE(core.d == d);
@@ -65,7 +70,7 @@ TEST_CASE("Train the cache core", "[Core::train]") {
     // Create the cache core
     size_t d = 10;
     float nTotal = 10000;
-    std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient(d));
+    std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient_Mock(d));
     Core core(d, client, 4, nTotal);
 
     // Build the dataset
@@ -90,7 +95,7 @@ TEST_CASE("Get Cell Size", "[Core::getCellSize]") {
     // Create cache core
     size_t d = 2;
     float nTotal = 10000;
-    std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient(d));
+    std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient_Mock(d));
     Core core(d, client, 4, nTotal);
     assert(core.index->is_trained == false);
 
@@ -136,7 +141,7 @@ TEST_CASE("Get Cell Size", "[Core::getCellSize]") {
 // Move this to a separate test file later, but it will be totally different then anyway.
 TEST_CASE("DB Client", "[DBClient::loadDB]") {
     size_t d = 2;
-    std::unique_ptr<DBClient> client = std::unique_ptr<DBClient>(new DBClient(d));
+    std::unique_ptr<DBClient_Mock> client = std::unique_ptr<DBClient_Mock>(new DBClient_Mock(d));
 
     // Generate data
     const float centroids[] = {1000, 1000, -1000, 1000, 1000, -1000, -1000, -1000};
@@ -163,7 +168,7 @@ TEST_CASE("Load Cell", "[Core::loadCell]") {
     // Create cache core
     size_t d = 2;
     float nTotal = 800;
-    std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient(d));
+    std::shared_ptr<DBClient_Mock> client = std::shared_ptr<DBClient_Mock>(new DBClient_Mock(d));
     size_t nCells = 4;
     Core core(d, client, nCells, nTotal);
 
@@ -206,7 +211,7 @@ TEST_CASE("Search", "[Core::search]") {
     // Create cache core
     size_t d = 2;
     float nTotal = 800;
-    std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient(d));
+    std::shared_ptr<DBClient_Mock> client = std::shared_ptr<DBClient_Mock>(new DBClient_Mock(d));
     size_t nCells = 4;
     Core core(d, client, nCells, nTotal);
 
@@ -278,7 +283,7 @@ TEST_CASE("Evict cell", "[Core::evictCell]") {
     // Create Cache Core
     size_t d = 2;
     float nTotal = 800;
-    std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient(d));
+    std::shared_ptr<DBClient_Mock> client = std::shared_ptr<DBClient_Mock>(new DBClient_Mock(d));
     size_t nCells = 4;
     Core core(d, client, nCells, nTotal);
 

@@ -94,12 +94,9 @@ def deserialize_document(sock):
         id_length = struct.unpack('Q', data)[0]
         id_str = read_string(sock, id_length)
 
-        print("id: " + id_str)
-
         # Read the number of floats (8-byte unsigned integer)
         data = sock.recv(8)
         num_floats = struct.unpack('Q', data)[0]
-        print("num floats in embedding: " + str(num_floats))
         embedding = read_floats(sock, num_floats)
 
         # Read the length of the second string
@@ -160,13 +157,17 @@ def main():
             if (command == 'TRAIN'):
                 args = []
                 random.seed(42)
-                for _ in range(315000):
-                    args.append(random.uniform(-1000, 1000))
+                for i in range(315000):
+                    num = random.uniform(-100, 100)
+                    if i % 50000 == 0:
+                        print("vector " + str(i / 2) + "[0]: " + str(num))
+                    args.append(num)
 
                 for _ in range(2):
                     args.append(1)
 
-            
+            print("COMMAND: ")
+            print(json.dumps(cmd, indent=4))
             expected = cmd['expected_response']
 
             handler = command_handlers.get(command)
@@ -177,13 +178,19 @@ def main():
                 sock.sendall(message.encode('latin1'))
                 if (command == "SEARCH"):
                     print("Processing SEARCH response")
-                    document = deserialize_query_results(sock, args["n"])
-                    print(document)
-                    # if (response != expected):
-                    #     print("Expected: " + expected.dec + " but got: " + response.decode('latin1'))
-                    #     raise "Got unexpected search response"
-                    # else:
-                    #     print("Got successful search response!")
+                    response = deserialize_query_results(sock, args["n"])
+                    for i in range(len(response)):
+                        result_set = response[i]
+                        for j in range(len(result_set)):
+                            doc = result_set[j]
+                            if (doc.document != expected[i][j]['document']):
+                                print("Document did not match")
+                                raise "Document did not match. Expected: (" + expected[i][j]['document'] + "), but got: (" + doc.document + ")"
+                            if doc.embedding:
+                                for k in range(len(doc.embedding)):
+                                    if doc.embedding[k] != expected[i][j]['embedding'][k]:
+                                        print("Embedding did not match")
+                                        raise "Found embedding that did not match the expected response"
                 else:
                     response = sock.recv(1024)
                     response_string = response.decode()

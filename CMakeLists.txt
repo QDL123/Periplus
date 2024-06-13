@@ -1,21 +1,30 @@
-cmake_minimum_required(VERSION 3.14) # Set the minimum required version of CMake
+cmake_minimum_required(VERSION 3.14)
 
-project(CoreTest) # Name of your project
+project(CoreTest)
 
-# Set C++17 as the standard for the project
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_definitions(-DASIO_STANDALONE)
 
+# Suppress deprecated declarations warnings
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wno-deprecated-declarations)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/wd4996)
+endif()
+
 # Find the Catch2 package
 find_package(Catch2 3 REQUIRED)
 
-# # Find Boost package, specifically looking for the system and thread components which are commonly used with Asio
-# find_package(Boost 1.70 REQUIRED COMPONENTS system thread)
-
 # Add the threading package to handle any threading needs of Asio
 find_package(Threads REQUIRED)
+
+# Find libcurl package
+find_package(CURL REQUIRED)
+
+# Set the path to the RapidJSON headers manually
+set(RAPIDJSON_INCLUDE_DIR "/opt/homebrew/include")
 
 # List all the source files required for the test executable, including dependencies
 set(TEST_SOURCES
@@ -32,26 +41,31 @@ add_executable(tests ${TEST_SOURCES})
 target_include_directories(tests PRIVATE
     /opt/homebrew/opt/faiss/include
     /opt/homebrew/opt/libomp/include
+    /opt/homebrew/opt/curlpp/include
+    ${CURL_INCLUDE_DIRS}
+    ${RAPIDJSON_INCLUDE_DIR}
 )
 
 # Specify the paths where the linker can find libraries
 link_directories(
     /opt/homebrew/opt/faiss/lib
     /opt/homebrew/opt/libomp/lib
+    /opt/homebrew/opt/curlpp/lib
 )
 
 # Link libraries to your executable target
-# target_link_libraries(tests PRIVATE Catch2::Catch2WithMain faiss omp)
 target_link_libraries(tests PRIVATE
     Catch2::Catch2WithMain
     /opt/homebrew/opt/faiss/lib/libfaiss.dylib
     /opt/homebrew/opt/libomp/lib/libomp.dylib
+    /opt/homebrew/opt/curlpp/lib/libcurlpp.dylib
+    ${CURL_LIBRARIES}
 )
 
-# Define source files for the new executable that uses Boost.Asio
+# Define source files for the new executable that uses Asio
 set(ASIO_SOURCES
     driver.cpp
-    server.cpp  # Replace with your actual file that uses Boost.Asio
+    server.cpp  # Replace with your actual file that uses Asio
     session.cpp
     cache.cpp
     core.cpp
@@ -60,20 +74,23 @@ set(ASIO_SOURCES
     data.cpp
 )
 
-# Add another executable that will use Boost.Asio
+# Add another executable that will use Asio
 add_executable(asio_app ${ASIO_SOURCES})
 
 # Specify the directories where the compiler can find headers for the Asio app
 target_include_directories(asio_app PRIVATE
-    ${Boost_INCLUDE_DIRS}
     /opt/homebrew/opt/faiss/include
     /opt/homebrew/opt/libomp/include
     /opt/homebrew/opt/asio/include
+    /opt/homebrew/opt/curlpp/include
+    ${CURL_INCLUDE_DIRS}
+    ${RAPIDJSON_INCLUDE_DIR}
 )
 
 # Link libraries to the new executable
 target_link_libraries(asio_app PRIVATE
-    ${Boost_LIBRARIES}
     /opt/homebrew/opt/faiss/lib/libfaiss.dylib
     /opt/homebrew/opt/libomp/lib/libomp.dylib
+    /opt/homebrew/opt/curlpp/lib/libcurlpp.dylib
+    ${CURL_LIBRARIES}
 )

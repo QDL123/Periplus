@@ -49,6 +49,7 @@ void Core::loadCellWithVec(std::shared_ptr<float[]> xq) {
     }
     std::cout << "Calling core loadCell func" << std::endl;
     this->loadCell(centroidIndex);
+    std::cout << "Completed Cell Load" << std::endl;
 }
 
 size_t Core::getCellSize(Data *x, faiss::idx_t centroidIndex, size_t lowerBound, size_t upperBound) {
