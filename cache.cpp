@@ -180,9 +180,26 @@ void Cache::search(std::shared_ptr<Session> session) {
     Data results[args->n * args->k];
     int cacheHits[args->n];
 
+    std::cout << "xq: ";
+    for (size_t i = 0; i < this->core->d; i++) {
+        std::cout << xq[i];
+        if (i < this->core->d - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << std::endl;
+
     this->core->search(args->n, args->xq.get(), args->k, results, cacheHits);
 
-    std::cout << "n: " << args->n << ", k: " << args->k << " , size: " << args->size << std::endl;
+    std::cout << "cacheHits: ";
+    for (size_t i = 0; i < args->n; i++) {
+        std::cout << cacheHits[i];
+        if (i < args->n - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << std::endl;
+
     for (size_t i = 0; i < args->n; i++) {
         std::memcpy(session->data_, &cacheHits[i], sizeof(int));
         session->sync_write(sizeof(int));
@@ -200,6 +217,8 @@ void Cache::search(std::shared_ptr<Session> session) {
             session->sync_write(bytes.size() - l);
         }
     }
+
+    session->read_command();
 }
 
 Cache::~Cache() {
