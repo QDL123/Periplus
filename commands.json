@@ -31,5 +31,10 @@
                 }
             ]
         ]
+    },
+    {
+        "command": "EVICT",
+        "args": [1, 1],
+        "expected_response": "Evicted cell"
     }
 ]

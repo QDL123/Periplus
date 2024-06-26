@@ -57,7 +57,7 @@ class CacheClient:
         if 'max_mem' in options:
             max_mem = options['max_mem']
 
-        nTotal = 1000000
+        nTotal = 250000
         if 'nTotal' in options:
             nTotal = options['nTotal']
 
@@ -220,3 +220,26 @@ class CacheClient:
 
         await self.conn.close()
         return res
+    
+
+    async def evict(self, vector):
+        if not self.conn.connected:
+            await self.conn.connect()
+
+        command = "EVICT"
+        num_bytes = len(vector) * 4
+        
+        fmt = "<Q"
+        static_args = struct.pack(fmt, num_bytes)
+        dynamic_args = struct.pack(f'<{len(vector)}f', *vector)
+        message = CacheClient.__format_command__(command, static_args, dynamic_args)
+
+        await self.conn.send(message)
+
+        res = await self.conn.receive()
+
+        if res.decode() != "Evicted cell":
+            raise "ERROR: COULD NOT EVICT CELL"
+        
+        await self.conn.close()
+        return True

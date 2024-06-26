@@ -28,7 +28,13 @@ void Cache::processCommand(std::shared_ptr<Session> session, std::string command
             } else if (command == std::string("LOAD")) {
                 output = "Processing load command!";
                 std::shared_ptr<LoadArgs> args = std::make_shared<LoadArgs>();
-                session->read_args(args);
+                // session->read_args(args);
+                session->updated_read_args(args);
+                break;
+            } else if (command == std::string("EVICT")) {
+                output = "Processing evict command!";
+                std::shared_ptr<EvictArgs> args = std::make_shared<EvictArgs>();
+                session->updated_read_args(args);
                 break;
             } else {
                 std::cout << "DIDn't match READY command" << std::endl;
@@ -75,6 +81,9 @@ void Cache::process_args(std::shared_ptr<Session> session) {
     } else if (session->args->get_command() == LOAD) {
         std::cout << "Starting load" << std::endl;
         this->load(session);
+    } else if (session->args->get_command() == EVICT) {
+        std::cout << "Starting evict" << std::endl;
+        this->evict(session);
     }
 }
 
@@ -93,6 +102,7 @@ void Cache::initialize(std::shared_ptr<Session> session) {
 
     // Calculate nCells
     size_t nCells = determineNCells(args->nTotal);
+    std::cout << "nCells: " << nCells << std::endl;
 
     this->core = std::make_unique<Core>(args->d, db_client, nCells, args->nTotal);
 
@@ -170,6 +180,7 @@ void Cache::load(std::shared_ptr<Session> session) {
     std::string output("Loaded cell");
     output.copy(session->data_, 1024);
     session->do_write(output.size());
+    std::cout << "Num docs: " << this->core->data.size() << std::endl;
 
     // Listen for more commands
     session->read_command();
@@ -180,17 +191,8 @@ void Cache::search(std::shared_ptr<Session> session) {
     Data results[args->n * args->k];
     int cacheHits[args->n];
 
-    std::cout << "xq: ";
-    for (size_t i = 0; i < this->core->d; i++) {
-        std::cout << xq[i];
-        if (i < this->core->d - 1) {
-            std::cout << ", ";
-        }
-    }
-    std::cout << std::endl;
-
     this->core->search(args->n, args->xq.get(), args->k, results, cacheHits);
-
+    std::cout << "Completed core search" << std::endl;
     std::cout << "cacheHits: ";
     for (size_t i = 0; i < args->n; i++) {
         std::cout << cacheHits[i];
@@ -201,9 +203,12 @@ void Cache::search(std::shared_ptr<Session> session) {
     std::cout << std::endl;
 
     for (size_t i = 0; i < args->n; i++) {
+        std::cout << "Sending result set size of: " << cacheHits[i] << " for query vector: " << i << std::endl;
         std::memcpy(session->data_, &cacheHits[i], sizeof(int));
         session->sync_write(sizeof(int));
-        for (size_t j = 0; j < cacheHits[i]; j++) {
+        std::cout << "Sending result set" << std::endl;
+        for (size_t j = 0; cacheHits[i] > -1 && j < cacheHits[i]; j++) {
+            std::cout << "In send loop" << std::endl;
             std::vector<char> bytes;
             results[(i * args->k) + j].serialize(bytes);
             size_t l = 0;
@@ -216,8 +221,22 @@ void Cache::search(std::shared_ptr<Session> session) {
             std::memcpy(session->data_, &bytes.data()[l], bytes.size() - l);
             session->sync_write(bytes.size() - l);
         }
+        std::cout << "Finished sending result set" << std::endl;
     }
 
+    session->read_command();
+}
+
+void Cache::evict(std::shared_ptr<Session> session) {
+    std::shared_ptr<EvictArgs> args = std::dynamic_pointer_cast<EvictArgs>(session->args);
+    this->core->evictCellWithVec(args->xq);
+    
+    std::string output("Evicted cell");
+    output.copy(session->data_, 1024);
+    session->do_write(output.size());
+    std::cout << "Num docs: " << this->core->data.size() << std::endl;
+
+    // Listen for more commands
     session->read_command();
 }
 

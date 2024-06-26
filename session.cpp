@@ -19,7 +19,6 @@ void Session::read_command() {
     auto self(shared_from_this());
     asio::async_read_until(this->socket_, this->data_stream_, "\r\n",
         [this, self](std::error_code ec, std::size_t length) {
-            std::cout << "Command data length: " << length << std::endl;
             if (!ec) {
                 std::istream is(&this->data_stream_);
                 std::string command;
@@ -88,16 +87,11 @@ void Session::read_dynamic_args(std::shared_ptr<Args> args) {
 void Session::read_static_args(std::shared_ptr<Args> args) {
     this->args = args;
     auto self(shared_from_this());
-    std::cout << "static size: " << this->args->get_static_size() << std::endl;
-    std::cout << "buffer size: " << this->data_stream_.size() << std::endl;
 
     asio::async_read(this->socket_, this->data_stream_, asio::transfer_exactly(this->args->get_static_size()),
         [this, self, &args](std::error_code ec, std::size_t bytes_transferred) {
-            std::cout << "Transferred " << bytes_transferred << " bytes of static data" << std::endl;
             std::cout << "Updated buffer size: " << this->data_stream_.size() << std::endl;
             if (!ec) {
-                // this->data_stream_.commit(bytes_transferred);
-                std::cout << "Received static data" << std::endl;
                 std::istream is(&this->data_stream_);
                 this->args->deserialize_static(is);
                 // Read the dynamic data (size +2 is for the end delimiter (2 chars 1 byte each))
@@ -126,7 +120,6 @@ void Session::read_args(std::shared_ptr<Args> args) {
     auto self(shared_from_this());
     asio::async_read_until(this->socket_, this->data_stream_, "\r\n",
         [this, self, &args](std::error_code ec, std::size_t length) {
-            std::cout << "Length of args: " << length << std::endl;
             if (!ec) {
                 std::istream is(&this->data_stream_);
                 this->args->deserialize(is);
@@ -174,7 +167,7 @@ void Session::sync_write(size_t length) {
     asio::write(socket_, asio::buffer(this->data_, length), ec);
 
     if (!ec) {
-        std::cout << "Sent data!" << std::endl;
+        // std::cout << "Sent data!" << std::endl;
     } else {
         std::cout << "An error occurred while sending data to the client" << std::endl;
         std::cout << ec << std::endl;

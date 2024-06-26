@@ -42,6 +42,16 @@ def handle_load(args):
 
     return struct.pack('<Q', num_bytes) + "\n".encode('latin1') + struct.pack(f'<{len(float_list)}f', *float_list)
 
+def handle_evict(args):
+    print("Handle EVICT")
+
+    float_list = [float(item) for item in args]
+
+    num_bytes = len(float_list) * 4
+    print("num_bytes: " + str(num_bytes))
+
+    return struct.pack('<Q', num_bytes) + "\n".encode('latin1') + struct.pack(f'<{len(float_list)}f', *float_list)
+
 
 def handle_search(args):
     print("Handle SEARCH")
@@ -138,6 +148,7 @@ command_handlers = {
     'TRAIN': handle_train,
     'LOAD': handle_load,
     'SEARCH': handle_search,
+    'EVICT': handle_evict
 }
 
 def main():

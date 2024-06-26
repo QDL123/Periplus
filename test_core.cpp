@@ -91,51 +91,51 @@ TEST_CASE("Train the cache core", "[Core::train]") {
     // Figure out what else we can assert here...
 }
 
-TEST_CASE("Get Cell Size", "[Core::getCellSize]") {
-    // Create cache core
-    size_t d = 2;
-    float nTotal = 10000;
-    std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient_Mock(d));
-    Core core(d, client, 4, nTotal);
-    assert(core.index->is_trained == false);
+// TEST_CASE("Get Cell Size", "[Core::getCellSize]") {
+//     // Create cache core
+//     size_t d = 2;
+//     float nTotal = 10000;
+//     std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient_Mock(d));
+//     Core core(d, client, 4, nTotal);
+//     assert(core.index->is_trained == false);
 
 
-    // Manually set the centroids for testing purposes
-    const float centroids[] = {1000, 1000, -1000, 1000, 1000, -1000, -1000, -1000};
-    core.quantizer->add(4, centroids);
+//     // Manually set the centroids for testing purposes
+//     const float centroids[] = {1000, 1000, -1000, 1000, 1000, -1000, -1000, -1000};
+//     core.quantizer->add(4, centroids);
 
-    std::vector<Data> data;
-    std::vector<float> embeddings;
-    faiss::idx_t n = 800;
-    generate_data(d, centroids, data, embeddings);
+//     std::vector<Data> data;
+//     std::vector<float> embeddings;
+//     faiss::idx_t n = 800;
+//     generate_data(d, centroids, data, embeddings);
 
-    // Set the index to trained so the centroids are not modified
-    core.index->is_trained = true;
-    assert(core.index->is_trained);
-    core.train(800, embeddings.data());
+//     // Set the index to trained so the centroids are not modified
+//     core.index->is_trained = true;
+//     assert(core.index->is_trained);
+//     core.train(800, embeddings.data());
 
-    // Test Spanning 3 cells
-    size_t cellSize = core.getCellSize(data.data(), 0, 0, 250);
-    REQUIRE(cellSize == 100);
+//     // Test Spanning 3 cells
+//     size_t cellSize = core.getCellSize(data.data(), 0, 0, 250);
+//     REQUIRE(cellSize == 100);
 
-    // Test Spanning 2 cellss
-    cellSize = core.getCellSize(data.data(), 0, 0, 110);
-    REQUIRE(cellSize == 100);
+//     // Test Spanning 2 cellss
+//     cellSize = core.getCellSize(data.data(), 0, 0, 110);
+//     REQUIRE(cellSize == 100);
 
-    // Test Spanning 2 cells by 1
-    cellSize = core.getCellSize(data.data(), 0, 0, 101);
-    REQUIRE(cellSize == 100);
+//     // Test Spanning 2 cells by 1
+//     cellSize = core.getCellSize(data.data(), 0, 0, 101);
+//     REQUIRE(cellSize == 100);
 
-    // Test tighest window
-    // With current function formulation upperbound will never be considered for the first outside 
-    // target cell so the function is upper bound exclusive. It can safely be out of bounds or the size of the array
-    // This makes sense considering the array will be size nGuess but the last element in the array will be at index nGuess - 1.
-    cellSize = core.getCellSize(data.data(), 0, 99, 101);
-    REQUIRE(cellSize == 100);
+//     // Test tighest window
+//     // With current function formulation upperbound will never be considered for the first outside 
+//     // target cell so the function is upper bound exclusive. It can safely be out of bounds or the size of the array
+//     // This makes sense considering the array will be size nGuess but the last element in the array will be at index nGuess - 1.
+//     cellSize = core.getCellSize(data.data(), 0, 99, 101);
+//     REQUIRE(cellSize == 100);
 
-    // Test spanning only 1 cell (should throw exception)
-    REQUIRE_THROWS(core.getCellSize(data.data(), 0, 0, 100));
-}
+//     // Test spanning only 1 cell (should throw exception)
+//     REQUIRE_THROWS(core.getCellSize(data.data(), 0, 0, 100));
+// }
 
 
 // Move this to a separate test file later, but it will be totally different then anyway.
@@ -188,19 +188,22 @@ TEST_CASE("Load Cell", "[Core::loadCell]") {
     // Load the external db the cache core pulls from
     client->loadDB(400, data.data());
 
+    double density = 0.4;
     // Load the first cell
-    core.loadCell(0);
+    std::cout << "First cell load" << std::endl;
+    core.loadCell(0, density);
+    std::cout << "Completed first cell load" << std::endl;
     // REQUIRE(core.embeddings.size() == 100);
     REQUIRE(core.data.size() == 100);
     // Load the 4th cell
-    core.loadCell(3);
+    core.loadCell(3, density);
     // REQUIRE(core.embeddings.size() == 200);
     REQUIRE(core.data.size() == 200);
 
 
     // Test multiple db queries needed to get full cell (Should need to make 3 total)
     core.nTotal = 100;
-    core.loadCell(1);
+    core.loadCell(1, density);
     // REQUIRE(core.embeddings.size() == 300);
     REQUIRE(core.data.size() == 300);
     // Is there a way to assert how many times db->search is being called to validate what we're testing?
@@ -233,8 +236,11 @@ TEST_CASE("Search", "[Core::search]") {
     std::cout << "About to load database" << std::endl;
     client->loadDB(400, data.data());
     std::cout << "About to load cell" << std::endl;
+
+    double density = 0.4;
+
     // Load the first cell
-    core.loadCell(0);
+    core.loadCell(0, density);
     std::cout << "Loaded cell" << std::endl;
     size_t xq_n = 1;
     size_t k = 5;
@@ -265,7 +271,7 @@ TEST_CASE("Search", "[Core::search]") {
     // Length is n so there should only be 1
     REQUIRE(cacheHits[0] == -1);
 
-    core.loadCell(3);
+    core.loadCell(3, density);
     core.search(xq_n, xq, k, results.data(), cacheHits);
     REQUIRE(cacheHits[0] == k);
     // for (int i = 0; i < xq_n * k * d; i++) {
@@ -304,15 +310,17 @@ TEST_CASE("Evict cell", "[Core::evictCell]") {
     // Load the external db the cache core pulls from
     client->loadDB(400, data.data());
 
+    double density = 0.4;
+
     // Load the first cell
-    core.loadCell(0);
+    core.loadCell(0, density);
 
     // Remove the cell
     core.evictCell(0);
     REQUIRE(core.data.size() == 0);
     
-    core.loadCell(1);
-    core.loadCell(3);
+    core.loadCell(1, density);
+    core.loadCell(3, density);
     REQUIRE(core.data.size() == 200);
 
     size_t xq_n = 1;

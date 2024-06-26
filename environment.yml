@@ -7,3 +7,4 @@ dependencies:
   - fastapi
   - uvicorn
   - faiss
+  - matplotlib

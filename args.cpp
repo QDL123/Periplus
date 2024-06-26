@@ -89,22 +89,22 @@ void LoadArgs::deserialize(std::istream& is) {
     this->read_static_delimiter(is);
     size_t nFloats = this->size / sizeof(float);
     this->xq = this->read_dynamic_data<float>(is, nFloats);
-
-    std::cout << "Loading cell containing vector: ";
-    for (size_t i = 0; i < nFloats; i++) {
-        std::cout << this->xq[i] << ", ";
-    }
-    std::cout << std::endl;
     
     this->read_end_delimiter(is);
 }
 
 void LoadArgs::deserialize_static(std::istream& is) {
     std::cout << "Deserialize static load args" << std::endl;
+    this->read_arg<size_t>(&this->size, is);
+    this->read_static_delimiter(is);
 }
 
 void LoadArgs::deserialize_dynamic(std::istream& is) {
     std::cout << "Deserialize dynamic load args" << std::endl;
+    size_t nFloats = this->size / sizeof(float);
+    this->xq = this->read_dynamic_data<float>(is, nFloats);
+
+    this->read_end_delimiter(is);
 }
 
 
@@ -131,4 +131,21 @@ void SearchArgs::deserialize_dynamic(std::istream& is) {
     size_t nFloats = this->size / sizeof(float);
     this->xq = this->read_dynamic_data<float>(is, nFloats);
     this->read_end_delimiter(is);
-} 
+}
+
+void EvictArgs::deserialize(std::istream& is) {
+    std::cout << "Deserialize evict args" << std::endl;
+}
+
+void EvictArgs::deserialize_static(std::istream& is) {
+    std::cout << "Deserialize static evict args" << std::endl;
+    this->read_arg<size_t>(&this->size, is);
+    this->read_static_delimiter(is);
+}
+
+void EvictArgs::deserialize_dynamic(std::istream& is) {
+    std::cout << "Deserialize dynamic evict args" << std::endl;
+    size_t nFloats = this->size / sizeof(float);
+    this->xq = this->read_dynamic_data<float>(is, nFloats);
+    this->read_end_delimiter(is);
+}

@@ -14,7 +14,8 @@ enum Command {
     INITIALIZE,
     TRAIN,
     LOAD,
-    SEARCH
+    SEARCH,
+    EVICT
 };
 
 struct Args {
@@ -99,7 +100,7 @@ struct TrainArgs : Args {
 
 
 struct LoadArgs : Args {
-    const static size_t static_size = 9;
+    const static size_t static_size = sizeof(size_t) + sizeof(char);
     std::shared_ptr<float[]> xq;
     
     virtual size_t get_static_size() override { return static_size; }
@@ -110,13 +111,24 @@ struct LoadArgs : Args {
 };
 
 struct SearchArgs : Args {
-    const static size_t static_size = 1;
+    const static size_t static_size = 3 * sizeof(size_t) + sizeof(char);
     size_t n;
     size_t k;
     std::shared_ptr<float[]> xq;
 
     virtual size_t get_static_size() override { return static_size; }
     virtual Command get_command() override { return SEARCH; }
+    virtual void deserialize(std::istream& is) override;
+    virtual void deserialize_static(std::istream& is) override;
+    virtual void deserialize_dynamic(std::istream& is) override;
+};
+
+struct EvictArgs : Args {
+    const static size_t static_size = sizeof(size_t) + sizeof(char);
+    std::shared_ptr<float[]> xq;
+
+    virtual size_t get_static_size() override { return static_size; }
+    virtual Command get_command() override { return EVICT; }
     virtual void deserialize(std::istream& is) override;
     virtual void deserialize_static(std::istream& is) override;
     virtual void deserialize_dynamic(std::istream& is) override;

@@ -11,13 +11,13 @@
 struct Core {
 
     static constexpr const double nGuessCoeff = 2;
-    static constexpr const double guessScalar = 1.5;
+    static constexpr const double guessScalar = 2;
 
     float nTotal = 0;
     size_t d = 0;
     size_t nCells = 0;
     std::unique_ptr<float[]> centroids;
-    std::unique_ptr<int32_t[]> residenceStatuses;
+    std::unique_ptr<float[]> residenceStatuses;
     std::shared_ptr<faiss::IndexFlat> quantizer;
     std::unique_ptr<faiss::IndexIVF> index;
     std::unique_ptr<faiss::IndexIDMap> idMap;
@@ -30,7 +30,8 @@ struct Core {
 
     Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal);
 
-    size_t getCellSize(Data *x, faiss::idx_t centroidIndex, size_t prevNGuess, size_t nGuess);
+    float getDensity(Data *x, size_t start, size_t range, faiss::idx_t target_centroid);
+    // size_t getCellSize(Data *x, faiss::idx_t centroidIndex, size_t prevNGuess, size_t nGuess);
 
     // May not need this is we're training the 
     // whole dataset at once. This may just be a wrapper
@@ -38,7 +39,11 @@ struct Core {
 
     void loadCellWithVec(std::shared_ptr<float[]> xq);
 
-    void loadCell(faiss::idx_t centroidIndex);
+    void evictCellWithVec(std::shared_ptr<float[]> xq);
+
+    // void loadCell(faiss::idx_t centroidIndex);
+
+    void loadCell(faiss::idx_t centroidIndex, float boundary_density);
 
     void search(size_t n, float *xq, size_t k, Data *data, int *cacheHits);
 
