@@ -14,6 +14,7 @@ app = FastAPI()
 dimension = 500  # Example dimension, change as needed
 index = faiss.IndexFlatL2(dimension)
 stored_objects = []
+object_indices = {}
 
 
 # Sample IVFFLAT Index
@@ -29,6 +30,9 @@ class StoredObject(BaseModel):
 
 class QueryResult(BaseModel):
     results: List[StoredObject]
+
+class IdsModel(BaseModel):
+    ids: List[str]
 
 @app.get("/v1/load_cell", response_model=QueryResult)
 def load_cell(n: int, xq: List[float] = Query(...)):
@@ -49,6 +53,21 @@ def load_cell(n: int, xq: List[float] = Query(...)):
         if idx < len(stored_objects):
             results.append(stored_objects[idx])
     
+    return {"results": results}
+
+
+@app.post("/v1/load_cell")
+async def handle_post(request: IdsModel):
+    # Extract the list of IDs from the request
+    ids = request.ids
+    
+    # Process the IDs as needed
+    # For example, just print them here
+    results = []
+    for id in ids:
+        results.append(stored_objects[object_indices[id]])
+
+    # Return a response
     return {"results": results}
 
 # Example endpoint to add embeddings to the index
@@ -99,42 +118,7 @@ def plot_density_versus_cell_percentage(densities, percent_of_cell):
     plt.show()
 
 
-
-
-def load_datastore():
-    print("Loading the datastore")
-    random.seed(42)
-    num_training = 160000
-    embeddings = []
-    for i in range (250000):
-        if (i % 1000 == 0):
-            print("Loading the " + str(i) + "th document")
-
-        id = str(uuid.uuid4())
-        document = "document: " + str(i)
-        metadata = "{'index': " + str(i) + "}"
-        embedding = []
-        for _ in range(dimension):
-            num = random.uniform(-100, 100)
-            # if (i % 25000 == 0):
-            #     print(str(i) + "th vector starts with " + str(num))
-            embedding.append(num)
-
-        embeddings.append(embedding)
-
-         # Add the embedding to the FAISS index
-            
-        # if i == num_training:
-        #     ivf.train(np.vstack(embeddings)) 
-
-        object = StoredObject(embedding=embedding, document=document, id=id, metadata=metadata)
-        stored_objects.append(object)
-    
-    ivf.train(np.vstack(embeddings))
-    print("Adding embeddings to IVF index")
-    ivf.add(np.vstack(embeddings))
-    index.add(np.vstack(embeddings))
-
+def generate_plots(embeddings, index, ivf):
     cell_counts = []
     for i in range(numCells):
         cell_counts.append(ivf.invlists.list_size(i))
@@ -178,51 +162,42 @@ def load_datastore():
             print("j: " + str(j) + "percent of cell loaded: " + str(percent_of_cell))
             cell_percentages.append(percent_of_cell)
         plot_density_versus_cell_percentage(rolling_densities, cell_percentages)
-        
+
+
+
+
+def load_datastore():
+    print("Loading the datastore")
+    random.seed(42)
+    embeddings = []
+    for i in range (50000):
+        document = "document: " + str(i)
+        namespace = uuid.UUID('12345678-1234-5678-1234-567812345678')
+
+        # Generate UUID3 (MD5 hash based)
+        uuid3 = uuid.uuid3(namespace, document)
+        # id = str(uuid.uuid4())
+        id = str(uuid3)
+        if (i % 1000 == 0):
+            print("Loading the " + str(i) + "th document")
+            print("id: " + id)
+
+        metadata = "{'index': " + str(i) + "}"
+        embedding = []
+        for _ in range(dimension):
+            num = random.uniform(-100, 100)
+            embedding.append(num)
+
+        embeddings.append(embedding)
+
+        object = StoredObject(embedding=embedding, document=document, id=id, metadata=metadata)
+        object_indices[id] = len(stored_objects)
+        stored_objects.append(object)
     
-    ivf.nprobe = 1
-
-
-    # for i in range(len(embeddings)):
-    #     # Getting density of vectors in the cell
-    #     xq = np.array(embeddings[i], dtype='float32').reshape(1, -1)
-    #     nn_distances, nn_indices = index.search(xq, 10000)
-    #     _, centroid_indices = quantizer.search(xq, 1)
-    #     print("centroid_indices len: " + str(len(centroid_indices)))
-    #     centroid = centroid_indices[0][0]
-    #     print("centroid: " + str(centroid))
-    #     cell_size = ivf.invlists.list_size(int(centroid))
-    #     print("cell size: " + str(cell_size))
-    #     ivf_distances, ivf_indices = ivf.search(xq, cell_size)
-
-    #     # Loop through nn to 
-    #     num_hits = 0
-    #     rolling_densities = []
-    #     cell_percentages = []
-    #     for j in range(len(nn_indices[0])):
-    #         # Detect if this embedding belongs to the relevant cell
-    #         xq_centroid_nn = np.array(embeddings[nn_indices[0][j]], dtype='float32').reshape(1, -1)
-    #         _, nearest_centroid = quantizer.search(xq_centroid_nn, 1)
-    #         print("nearest centroid: " + str(nearest_centroid[0][0]))
-    #         if nearest_centroid[0][0] == centroid:
-    #             # This vector belongs to the cell we are trying to load
-    #             num_hits += 1
-    #             print("Found hit at j: " + str(j))
-    #         density = num_hits / (j + 1)
-    #         if density > 0:
-    #             print("density > 0")
-
-    #         rolling_densities.append(density)
-    #         percent_of_cell = num_hits / cell_size
-    #         cell_percentages.append(percent_of_cell)
-    #         vectors_queried = j
-
-    #     print("length of densities: " + str(len(rolling_densities)))
-    #     print("length of percentages: " + str(len(cell_percentages)))
-    #     for j in range(100):
-    #         print("density: " + str(rolling_densities[j]) + ", percent loaded: " + str(cell_percentages[j]))
-    #     plot_density_versus_cell_percentage(np.array(rolling_densities), np.array(cell_percentages))
-
+    ivf.train(np.vstack(embeddings))
+    print("Adding embeddings to IVF index")
+    ivf.add(np.vstack(embeddings))
+    index.add(np.vstack(embeddings))
 
         
 

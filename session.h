@@ -25,7 +25,6 @@ public:
 
     void start();
     void read_command();
-    void read_args(std::shared_ptr<Args> args);
     void read_static_args(std::shared_ptr<Args> args);
     void updated_read_args(std::shared_ptr<Args> args);
     void read_dynamic_args(std::shared_ptr<Args> args);

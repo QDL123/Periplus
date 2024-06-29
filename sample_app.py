@@ -1,15 +1,16 @@
 import asyncio
 import random
+import uuid
 from python_client import CacheClient
 from time import perf_counter
 
 
 
-def generate_training_data(d):
+def generate_training_data(d, num_embeddings):
     data = []
     random.seed(42)
 
-    for _ in range(160000):
+    for _ in range(num_embeddings):
         vector = []
         for _ in range(d):
             vector.append(random.uniform(-100, 100))
@@ -18,29 +19,44 @@ def generate_training_data(d):
 
     return data
 
+def generate_ids(num_ids):
+    namespace = uuid.UUID('12345678-1234-5678-1234-567812345678')
+    ids = []
+    for i in range(num_ids):
+        document = "document: " + str(i)
+        uuid3 = uuid.uuid3(namespace, document)
+        id = str(uuid3)
+        ids.append(id)
+
+    return ids
+
 async def prepare_cache(client):
     url = "http://localhost:8000/v1/load_cell"
-    d = 500
+    d = 2
 
     print("Initializing")
-    await client.initialize(d=d, db_url=url)
+    await client.initialize(d=d, db_url=url, options={ "nTotal": 50000 })
 
     print("Generating Training data")
-    training_data = generate_training_data(d)
+    training_data = generate_training_data(d=d, num_embeddings=50000)
 
     print("Training")
     await client.train(training_data)
 
+    print("Adding")
+    ids = generate_ids(len(training_data))
+    await client.add(ids=ids, embeddings=training_data)
+
     print("Loading cell associated with vector 10")
-    print("Loading cell with centroid beginning with " + str(training_data[10][0]) + " and ending with " + str(training_data[10][499]))
+    print("Loading cell with centroid beginning with " + str(training_data[10][0]) + " and ending with " + str(training_data[10][1]))
     await client.load(training_data[10])
 
     print("Loading cell associated with vector 100")
-    print("Loading cell with centroid beginning with " + str(training_data[100][0]) + " and ending with " + str(training_data[100][499]))
+    print("Loading cell with centroid beginning with " + str(training_data[100][0]) + " and ending with " + str(training_data[100][1]))
     await client.load(training_data[100])
 
     print("Loading cell associated with vector 1000")
-    print("Loading cell with centroid beginning with " + str(training_data[1000][0]) + " and ending with " + str(training_data[1000][499]))
+    print("Loading cell with centroid beginning with " + str(training_data[1000][0]) + " and ending with " + str(training_data[1000][1]))
     await client.load(training_data[1000])
 
 
@@ -52,7 +68,7 @@ async def find_cache_hit_prob():
 
     client = CacheClient("localhost", 13)
     print("initializing")
-    await client.initialize(d=500, db_url="http://localhost:8000/v1/load_cell")
+    await client.initialize(d=2, db_url="http://localhost:8000/v1/load_cell")
     print("generating training data")
     training_data = generate_training_data(500)
 
@@ -110,5 +126,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    # asyncio.run(main())
-    asyncio.run(find_cache_hit_prob())
+    asyncio.run(main())
+    # asyncio.run(find_cache_hit_prob())

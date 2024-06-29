@@ -14,6 +14,8 @@
 
 
 Core::Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal) : d{d}, db{db}, nCells{nCells}, nTotal{nTotal}  {
+    // Make randomness in faiss algos repeatable and predicatable
+    // faiss::RandomGenerator rng(1234);
     // TODO: use make_shared
     this->quantizer = std::shared_ptr<faiss::IndexFlatL2>(new faiss::IndexFlatL2(this->d));
     this->index = std::unique_ptr<faiss::IndexIVFFlat>(new faiss::IndexIVFFlat(this->quantizer.get(), this->d, this->nCells));
@@ -21,6 +23,7 @@ Core::Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal) 
     this->residenceStatuses = std::unique_ptr<float[]>(new float[this->nCells]);
     for (int i = 0; i < this->nCells; i++) {
         this->residenceStatuses[i] = -1;
+        this->ids_by_cell.push_back(std::vector<std::string>());
     }
 }
 
@@ -45,12 +48,13 @@ void Core::loadCellWithVec(std::shared_ptr<float[]> xq) {
         // The cell has already been loaded. Must be evicted before it is loaded again
         // TODO: Make this a customer error and catch it in the calling method to send the message back to
         // the client
-        throw std::runtime_error("Attempting to load cell already in residence. Must evict before loading again.");
+        // throw std::runtime_error("Attempting to load cell already in residence. Must evict before loading again.");
+        return;
     }
-    std::cout << "Calling core loadCell func" << std::endl;
     // TODO: Decide how to set this hyperparameter
     float density = 0.1;
-    this->loadCell(centroidIndex, density);
+    // this->loadCell(centroidIndex, density);
+    this->loadCell(centroidIndex);
     std::cout << "Completed Cell Load" << std::endl;
 }
 
@@ -59,11 +63,10 @@ void Core::evictCellWithVec(std::shared_ptr<float[]> xq) {
     float distance;
     this->quantizer->search(1, xq.get(), 1, &distance, &centroidIndex);
     if (this->residenceStatuses[centroidIndex] < 0) {
-        throw std::runtime_error("Attempting to evict cell not in residence.");
+        // throw std::runtime_error("Attempting to evict cell not in residence.");
+        return;
     }
-    std::cout << "Calling core evictCell func" << std::endl;
     this->evictCell(centroidIndex);
-    std::cout << "Completed Cell Eviction" << std::endl;
 }
 
 // size_t Core::getCellSize(Data *x, faiss::idx_t centroidIndex, size_t lowerBound, size_t upperBound) {
@@ -112,6 +115,28 @@ float Core::getDensity(Data *x, size_t start, size_t range, faiss::idx_t target_
     float density = (float)numInCell / range;
     std::cout << "Density of centroid: " << target_centroid << " from " << start << " to " << start + range << " is: " << density << std::endl;  
     return density;
+}
+
+// Load cell function based on id look up 
+void Core::loadCell(faiss::idx_t target_centroid) {
+    Data *x = new Data[this->ids_by_cell[target_centroid].size()];
+    this->db->search(ids_by_cell[target_centroid], x);
+
+    faiss::idx_t centroid;
+    float distances[1];
+    for (size_t i = 0; i < this->ids_by_cell[target_centroid].size(); i++) {
+        this->quantizer->search(1, x[i].embedding.get(), 1, distances, &centroid);
+        if (centroid == target_centroid) {
+            this->data.push_back(x[i]);
+            this->index->add(1, x[i].embedding.get());
+        } else {
+            std::cerr << "Queried vector does not belong to the target cell" << std::endl;
+            std::cerr << "Expected " << target_centroid << ", but quantizer search returned " << centroid << std::endl;
+        }
+    }
+
+    this->residenceStatuses[target_centroid] = this->ids_by_cell[target_centroid].size();
+    delete[] x;
 }
 
 void Core::loadCell(faiss::idx_t target_centroid, float boundary_density) {
@@ -247,16 +272,13 @@ void Core::search(size_t n, float *xq, size_t k, Data *data, int *cacheHits) {
 
     // TODO: enable multi probe for more accurate queries (starting with nprobe = 1)
     size_t nprobe = 1;
-    std::cout << "query[0]: " << xq[0] << ", query[499]: " << xq[499];
     this->quantizer->search(n, xq, nprobe, centroidDistances, centroidIndices);
-    std::cout << ", centroid[0]: " << this->centroids[centroidIndices[0] * this->d + 0] << ", centroid[499]: " << this->centroids[centroidIndices[0] * this->d + 499] << std::endl;
     for (int i = 0; i < n; i++) {
         // TODO: experiement with this condition. Consider using median based (excluding queries further than the 90th
         // percentile vector) rather than 90% of the distance (this much harder)
         float status = this->residenceStatuses[centroidIndices[i]];
-        std::cout << "furthest vector loaded in cell: " << status << std::endl;
-        std::cout << "distance of query vector: " << centroidDistances[i] << std::endl;
-        if (status > -1 && centroidDistances[i] < status) {
+        if (status > -1) {
+        // if (status > -1 && centroidDistances[i] < status) {
             // cell is in residence
             cacheHits[i] = 0;
             faiss::idx_t labels[k];
@@ -307,6 +329,32 @@ void Core::evictCell(faiss::idx_t centroidIndex) {
 
     // Update residency status
     this->residenceStatuses[centroidIndex] = -1;
+}
+
+bool Core::isNullTerminated(const char* str, size_t maxLength) {
+    for (size_t i = 0; i < maxLength; ++i) {
+        if (str[i] == '\0') {
+            return true;  // Found null terminator within the maxLength
+        }
+    }
+    return false;  // No null terminator found within the maxLength
+}
+
+
+void Core::add(size_t num_docs, std::vector<std::shared_ptr<char[]>>& ids, std::shared_ptr<float[]> embeddings) {
+    // Ensure the number of embeddings matches the number of ids
+    // assert(ids.size() == embeddings / this->d);
+    for (size_t i = 0; i < num_docs; i++) {
+        // For each embedding, find the associated centroid
+        float distances[1];
+        faiss::idx_t centroid;
+        this->quantizer->search(1, embeddings.get() + (i * this->d), 1, distances, &centroid);
+        // Store the id in the corresponding list
+        // Can we count on this string being null terminated? Expect not
+        assert(isNullTerminated(ids[i].get(), 100));
+        std::string id(ids[i].get());
+        this->ids_by_cell[centroid].push_back(id);
+    }
 }
 
 

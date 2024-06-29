@@ -89,6 +89,7 @@ class CacheClient:
         fmt = "<Q"
         static_args = struct.pack(fmt, num_bytes)
         dynamic_args = struct.pack(f'<{len(float_list)}f', *float_list)
+        assert num_bytes == len(dynamic_args)
         message = CacheClient.__format_command__(command, static_args, dynamic_args)
 
         await self.conn.send(message)
@@ -99,6 +100,71 @@ class CacheClient:
         
         await self.conn.close()
         return True
+    
+    
+    async def add(self, ids, embeddings):
+        if not self.conn.connected:
+            await self.conn.connect()
+
+        assert len(ids) == len(embeddings)
+        command = "ADD"
+
+        num_bytes = 0
+        # account for ids
+        for id in ids:
+            num_bytes += len(id)
+
+        # account for id lengths
+        num_bytes += len(ids) * 4
+
+        # account for delimiter between ids and embeddings
+        num_bytes += 1
+
+        # account for embeddings
+        num_bytes += len(embeddings) * len(embeddings[0]) * 4
+
+        print("num_bytes: " + str(num_bytes))
+
+        fmt = "<QQ"
+        # static_args = struct.pack(fmt, len(ids), num_bytes)
+
+        # Serialize the integer-string pairs
+        dynamic_data = b""  # Initialize as bytes object
+
+        for id in ids:
+            # Pack the unsigned integer
+            length = len(id)
+            dynamic_data += struct.pack('<Q', length)
+            # Pack the string with the corresponding length
+            # dynamic_data += struct.pack(f'{length}s', id.encode('utf-8'))
+            dynamic_data += id.encode('latin1')
+
+        # Add the newline character as bytes
+        dynamic_data += b'\n'
+
+        float_list = [item for sublist in embeddings for item in sublist]
+
+        dynamic_data += struct.pack(f'<{len(float_list)}f', *float_list)
+
+        # # Serialize the floating-point numbers
+        # for embedding in embeddings:
+        #     for num in embedding:
+        #         dynamic_data += struct.pack('f', num)
+
+        print("len(dynamic_data): " + str(len(dynamic_data)))
+        static_args = struct.pack(fmt, len(ids), len(dynamic_data))
+        message = CacheClient.__format_command__(command, static_args, dynamic_data)
+
+
+        await self.conn.send(message)
+
+        res = await self.conn.receive()
+        if res.decode() != "Added vectors":
+            raise "ERROR: FAILED TO ADD VECTORS TO CACHE"
+        
+        await self.conn.close()
+        return True
+        
     
 
     async def load(self, vector):

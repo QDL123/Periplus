@@ -18,21 +18,22 @@ void Cache::processCommand(std::shared_ptr<Session> session, std::string command
     switch (this->status) {
         case READY:
             if (command == std::string("SEARCH")) {
-                output = "Processing search command";
+                output = "Parsing search command";
                 std::shared_ptr<SearchArgs> args = std::make_shared<SearchArgs>();
-                std::cout << "Calling read_static_args" << std::endl;
                 session->updated_read_args(args);
-                // session->read_static_args(args);
-                // session->read_args(args);
+                break;
+            } else if (command == std::string("ADD")) {
+                output = "Parsing add command";
+                std::shared_ptr<AddArgs> args = std::make_shared<AddArgs>();
+                session->updated_read_args(args);
                 break;
             } else if (command == std::string("LOAD")) {
-                output = "Processing load command!";
+                output = "Parsing load command!";
                 std::shared_ptr<LoadArgs> args = std::make_shared<LoadArgs>();
-                // session->read_args(args);
                 session->updated_read_args(args);
                 break;
             } else if (command == std::string("EVICT")) {
-                output = "Processing evict command!";
+                output = "Parsing evict command!";
                 std::shared_ptr<EvictArgs> args = std::make_shared<EvictArgs>();
                 session->updated_read_args(args);
                 break;
@@ -41,10 +42,8 @@ void Cache::processCommand(std::shared_ptr<Session> session, std::string command
             }
         case INITIALIZED:
             if (command == std::string("TRAIN")){
-                output = "Processing train command!";
+                output = "Parsing train command!";
                 std::shared_ptr<TrainArgs> args = std::make_shared<TrainArgs>();
-                // session->read_args(args);
-                // session->read_static_args(args);
                 session->updated_read_args(args);
                 break;
             }
@@ -52,7 +51,7 @@ void Cache::processCommand(std::shared_ptr<Session> session, std::string command
             if (command == std::string("INITIALIZE")) {
                 output = "Processing initialize command!";
                 std::shared_ptr<InitializeArgs> args = std::make_shared<InitializeArgs>();
-                session->read_args(args);
+                session->updated_read_args(args);
                 break;
             }
         default:
@@ -70,19 +69,22 @@ void Cache::process_args(std::shared_ptr<Session> session) {
     // We now have a completed args object
     // Determine the command
     if (session->args->get_command() == SEARCH) {
-        std::cout << "Starting search" << std::endl;
+        std::cout << "Performing search" << std::endl;
         this->search(session);
+    } else if (session->args->get_command() == ADD) {
+        std::cout << "Performing add" << std::endl;
+        this->add(session);
     } else if (session->args->get_command() == INITIALIZE) {
-        std::cout << "Starting initialization" << std::endl;
+        std::cout << "Performing initialization" << std::endl;
         this->initialize(session);
     } else if (session->args->get_command() == TRAIN) {
-        std::cout << "Starting training" << std::endl;
+        std::cout << "Performing training" << std::endl;
         this->train(session);
     } else if (session->args->get_command() == LOAD) {
-        std::cout << "Starting load" << std::endl;
+        std::cout << "Performing load" << std::endl;
         this->load(session);
     } else if (session->args->get_command() == EVICT) {
-        std::cout << "Starting evict" << std::endl;
+        std::cout << "Performing evict" << std::endl;
         this->evict(session);
     }
 }
@@ -192,7 +194,6 @@ void Cache::search(std::shared_ptr<Session> session) {
     int cacheHits[args->n];
 
     this->core->search(args->n, args->xq.get(), args->k, results, cacheHits);
-    std::cout << "Completed core search" << std::endl;
     std::cout << "cacheHits: ";
     for (size_t i = 0; i < args->n; i++) {
         std::cout << cacheHits[i];
@@ -203,12 +204,9 @@ void Cache::search(std::shared_ptr<Session> session) {
     std::cout << std::endl;
 
     for (size_t i = 0; i < args->n; i++) {
-        std::cout << "Sending result set size of: " << cacheHits[i] << " for query vector: " << i << std::endl;
         std::memcpy(session->data_, &cacheHits[i], sizeof(int));
         session->sync_write(sizeof(int));
-        std::cout << "Sending result set" << std::endl;
         for (size_t j = 0; cacheHits[i] > -1 && j < cacheHits[i]; j++) {
-            std::cout << "In send loop" << std::endl;
             std::vector<char> bytes;
             results[(i * args->k) + j].serialize(bytes);
             size_t l = 0;
@@ -221,7 +219,6 @@ void Cache::search(std::shared_ptr<Session> session) {
             std::memcpy(session->data_, &bytes.data()[l], bytes.size() - l);
             session->sync_write(bytes.size() - l);
         }
-        std::cout << "Finished sending result set" << std::endl;
     }
 
     session->read_command();
@@ -237,6 +234,16 @@ void Cache::evict(std::shared_ptr<Session> session) {
     std::cout << "Num docs: " << this->core->data.size() << std::endl;
 
     // Listen for more commands
+    session->read_command();
+}
+
+void Cache::add(std::shared_ptr<Session> session) {
+    std::shared_ptr<AddArgs> args = std::dynamic_pointer_cast<AddArgs>(session->args);
+    this->core->add(args->num_docs, args->ids, args->embeddings);
+
+    std::string output("Added vectors");
+    output.copy(session->data_, 1024);
+    session->do_write(output.size());
     session->read_command();
 }
 

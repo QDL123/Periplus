@@ -114,23 +114,6 @@ void Session::read_static_args(std::shared_ptr<Args> args) {
     std::cout << "Called asio::async_read" << std::endl;
 }
 
-
-void Session::read_args(std::shared_ptr<Args> args) {
-    this->args = args;
-    auto self(shared_from_this());
-    asio::async_read_until(this->socket_, this->data_stream_, "\r\n",
-        [this, self, &args](std::error_code ec, std::size_t length) {
-            if (!ec) {
-                std::istream is(&this->data_stream_);
-                this->args->deserialize(is);
-                this->cache->process_args(self);
-            } else {
-                std::cout << "AN ERROR HAS OCCURRED DURING STATIC DESERIALIZATION" << std::endl;
-                std::cerr << ec << std::endl;
-            }
-    });
-}
-
 void Session::do_read() {
     // maintain a shared pointer to the session in the lambda to prevent the session from destructing before
     // the callback completes

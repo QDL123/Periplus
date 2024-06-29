@@ -15,6 +15,7 @@ struct DBClient {
     // This function is virtual only so it can be overidden by the mock class
     virtual void search(faiss::idx_t n, float *xq, faiss::idx_t k, Data *x);
 
+    virtual void search(std::vector<std::string> ids, Data *x);
 };
 
 
@@ -27,6 +28,8 @@ struct DBClient_Mock : DBClient {
     void loadDB(faiss::idx_t n, Data *data);
     // Override the search function to use the local index instead of making an API call
     void search(faiss::idx_t n, float *xq, faiss::idx_t k, Data *x) override;
+
+    void search(std::vector<std::string> ids, Data *x) override;
 };
 
 

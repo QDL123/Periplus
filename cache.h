@@ -34,6 +34,7 @@ public:
     void load(std::shared_ptr<Session> session);
     void search(std::shared_ptr<Session> session);
     void evict(std::shared_ptr<Session> session);
+    void add(std::shared_ptr<Session> session);
     ~Cache();
 
 private:

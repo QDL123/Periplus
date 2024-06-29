@@ -25,11 +25,12 @@ struct Core {
 
     // size of nx * d 
     // std::vector< std::vector <float> > embeddings;
-
+    std::vector<std::vector<std::string>> ids_by_cell;
     std::vector<Data> data;
+    
 
     Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal);
-
+    bool isNullTerminated(const char* str, size_t maxLength);
     float getDensity(Data *x, size_t start, size_t range, faiss::idx_t target_centroid);
     // size_t getCellSize(Data *x, faiss::idx_t centroidIndex, size_t prevNGuess, size_t nGuess);
 
@@ -44,10 +45,14 @@ struct Core {
     // void loadCell(faiss::idx_t centroidIndex);
 
     void loadCell(faiss::idx_t centroidIndex, float boundary_density);
+    
+    void loadCell(faiss::idx_t centroidIndex);
 
     void search(size_t n, float *xq, size_t k, Data *data, int *cacheHits);
 
     void evictCell(faiss::idx_t centroidIndex);
+
+    void add(size_t num_docs, std::vector<std::shared_ptr<char[]>>& ids, std::shared_ptr<float[]> embeddings);
 
 
     ~Core();

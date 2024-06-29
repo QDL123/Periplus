@@ -31,6 +31,133 @@ std::string constructFloatArrayQuery(const float* array, size_t length) {
     return oss.str();
 }
 
+// Function to construct the JSON body from a vector of strings
+std::string constructJsonBody(const std::vector<std::string>& ids) {
+    rapidjson::Document d;
+    d.SetObject();
+    rapidjson::Document::AllocatorType& allocator = d.GetAllocator();
+
+    rapidjson::Value idArray(rapidjson::kArrayType);
+    for (const auto& id : ids) {
+        idArray.PushBack(rapidjson::Value().SetString(id.c_str(), allocator), allocator);
+    }
+
+    d.AddMember("ids", idArray, allocator);
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    d.Accept(writer);
+
+    return buffer.GetString();
+}
+
+
+// Function to check if a string is null-terminated within a given length
+bool isNullTerminated(const char* str, size_t maxLength) {
+    for (size_t i = 0; i < maxLength; ++i) {
+        if (str[i] == '\0') {
+            return true;  // Found null terminator within the maxLength
+        }
+    }
+    return false;  // No null terminator found within the maxLength
+}
+
+
+void DBClient::search(std::vector<std::string> ids, Data *x) {
+    CURL *curl;
+    CURLcode res;
+    std::string readBuffer;
+
+    curl = curl_easy_init();
+
+    if (curl) {
+        std::ostringstream urlStream;
+        urlStream << this->db_url.get();
+
+        // Construct the JSON body
+        std::string jsonBody = constructJsonBody(ids);
+
+        // Get the complete URL
+        std::string url = urlStream.str();
+
+        // Set the URL for the request
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+        // Set the POST request method
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+
+        // Set the POST data
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonBody.c_str());
+
+        // Set the content type to JSON
+        struct curl_slist* headers = nullptr;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        // Set the callback function to handle the response data
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+
+        // Set the user data parameter (string to store the response data)
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+        // Perform the request, res will get the return code
+        res = curl_easy_perform(curl);
+
+        // Check for errors
+        if(res != CURLE_OK) {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        } else {
+            // Parse the JSON response using RapidJSON
+            rapidjson::Document document;
+            document.Parse(readBuffer.c_str());
+
+            if (document.HasParseError()) {
+                std::cerr << "Parse error: " << document.GetParseError() << std::endl;
+            } else if (document.HasMember("results") && document["results"].IsArray()) {
+                size_t i = 0;
+                for (const auto& item : document["results"].GetArray()) {
+                    if (item.HasMember("id") && item["id"].IsString()) {
+                        const char* id_str = item["id"].GetString();
+                        x[i].id_len = std::strlen(id_str);
+                        x[i].id = std::shared_ptr<char>(new char[x[i].id_len + 1]);
+                        std::strcpy(x[i].id.get(), id_str);
+                    }
+                    if (item.HasMember("embedding") && item["embedding"].IsArray()) {
+                        x[i].embedding_len = item["embedding"].Size();
+                        x[i].embedding = std::shared_ptr<float>(new float[x[i].embedding_len]);
+                        size_t index = 0;
+                        for (const auto& val : item["embedding"].GetArray()) {
+                            if (val.IsFloat()) {
+                                x[i].embedding[index++] = val.GetFloat();
+                            }
+                        }
+                    }
+                    if (item.HasMember("document") && item["document"].IsString()) {
+                        const char* document_str = item["document"].GetString();
+                        x[i].document_len = std::strlen(document_str);
+                        x[i].document = std::shared_ptr<char>(new char[x[i].document_len + 1]);
+                        std::strcpy(x[i].document.get(), document_str);
+                    }
+                    if (item.HasMember("metadata") && item["metadata"].IsString()) {
+                        const char* metadata_str = item["metadata"].GetString();
+                        x[i].metadata_len = std::strlen(metadata_str);
+                        x[i].metadata = std::shared_ptr<char>(new char[x[i].metadata_len + 1]);
+                        std::strcpy(x[i].metadata.get(), metadata_str);
+                    }
+
+                    i++;
+                }
+            } else {
+                std::cout << "JSON wasn't an array" << std::endl;
+            }
+        }
+
+        // Cleanup
+        curl_easy_cleanup(curl);
+    }
+}
+
+
 void DBClient::search(faiss::idx_t n, float *xq, faiss::idx_t k, Data *x) {
     // TODO: GUARD AGAINST Querying greater than the size of the database
     CURL* curl;
@@ -41,6 +168,12 @@ void DBClient::search(faiss::idx_t n, float *xq, faiss::idx_t k, Data *x) {
     curl = curl_easy_init();
     if(curl) {
         // Construct the query parameters
+
+        if (isNullTerminated(this->db_url.get(), 100)) {
+            std::cout << "FOUND NULL TERMINATOR" << std::endl;
+        } else {
+            std::cout << "NEVER FOUND NULL TERMINATOR" << std::endl;
+        }
         std::ostringstream urlStream;
         urlStream << this->db_url.get() << "?n=" << k << constructFloatArrayQuery(xq, this->d);
 
@@ -155,4 +288,8 @@ void DBClient_Mock::search(faiss::idx_t n, float *xq, faiss::idx_t k, Data *x) {
             x[j + i * k] = Data(this->data[labels[j + i * k]]);
         }
     }
+}
+
+void DBClient_Mock::search(std::vector<std::string> ids, Data *x) {
+    std::cout << "Called mock of new search function, but it's not yet implemented" << std::endl;
 }
