@@ -7,10 +7,6 @@ Data::Data()
     : id_len(0), embedding_len(0), document_len(0), metadata_len(0), id(nullptr), embedding(nullptr), document(nullptr), metadata(nullptr) {}
 
 
-// Data::Data(std::istream& is) {
-//     // TODO: implement deserialization   
-// }
-
 // Copy Constructor
 Data::Data(const Data& other) : id_len(other.id_len), embedding_len(other.embedding_len), document_len(other.document_len), metadata_len(other.metadata_len),
     id(other.id), embedding(other.embedding), document(other.document), metadata(other.metadata)  {}

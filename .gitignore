@@ -1,3 +1,5 @@
 .vscode/*
 build/*
 __pycache__/*
+milvus_env/*
+datasets/*

@@ -109,54 +109,85 @@ class CacheClient:
         assert len(ids) == len(embeddings)
         command = "ADD"
 
+        print("computing dynamic length")
+        # Compute the dynamic length
         num_bytes = 0
         # account for ids
         for id in ids:
-            num_bytes += len(id)
+            num_bytes += len(str(id))
 
         # account for id lengths
-        num_bytes += len(ids) * 4
+        num_bytes += len(ids) * 8
 
         # account for delimiter between ids and embeddings
         num_bytes += 1
 
         # account for embeddings
         num_bytes += len(embeddings) * len(embeddings[0]) * 4
-
         print("num_bytes: " + str(num_bytes))
 
+        
+        # Send the static args
+        print("Sending static data")
         fmt = "<QQ"
-        # static_args = struct.pack(fmt, len(ids), num_bytes)
+        static_args = struct.pack(fmt, len(ids), num_bytes)
+        static_message = command + "\r\n" + static_args.decode('latin1') + "\n"
+        await self.conn.send(static_message)
 
         # Serialize the integer-string pairs
-        dynamic_data = b""  # Initialize as bytes object
+        # dynamic_data = b""  # Initialize as bytes object
 
+        print("Sending id data")
+        # Send the ids
         for id in ids:
+            id = str(id)
             # Pack the unsigned integer
             length = len(id)
-            dynamic_data += struct.pack('<Q', length)
-            # Pack the string with the corresponding length
-            # dynamic_data += struct.pack(f'{length}s', id.encode('utf-8'))
-            dynamic_data += id.encode('latin1')
+            id_data = ""
+            id_data += struct.pack('<Q', length).decode('latin1')
+            id_data += id
+
+            await self.conn.send(id_data)
+            # dynamic_data += struct.pack('<Q', length)
+            # # Pack the string with the corresponding length
+            # # dynamic_data += struct.pack(f'{length}s', id.encode('utf-8'))
+
+            # dynamic_data += id.encode('latin1')
+
+        print("Sending id / embedding delimiter")
+        # Send the id / embedding delimiter
+        delimiter = b'\n'
+        await self.conn.send(delimiter.decode('latin1'))
+
 
         # Add the newline character as bytes
-        dynamic_data += b'\n'
+        # dynamic_data += b'\n'
+        # Send the embeddings
+        print("Sending embeddings")
+        for i, embedding in enumerate(embeddings):
+            if i % 100 == 0:
+                print("Sending " + str(i) + "th embedding") 
+            embedding_data = struct.pack(f'<{len(embedding)}f', *embedding)
+            await self.conn.send(embedding_data.decode('latin1'))
+        
+        await self.conn.send("\r\n")
 
-        float_list = [item for sublist in embeddings for item in sublist]
+        # float_list = [item for sublist in embeddings for item in sublist]
 
-        dynamic_data += struct.pack(f'<{len(float_list)}f', *float_list)
+        # dynamic_data += struct.pack(f'<{len(float_list)}f', *float_list)
 
-        # # Serialize the floating-point numbers
-        # for embedding in embeddings:
-        #     for num in embedding:
-        #         dynamic_data += struct.pack('f', num)
+        # # # Serialize the floating-point numbers
+        # # for embedding in embeddings:
+        # #     for num in embedding:
+        # #         dynamic_data += struct.pack('f', num)
 
-        print("len(dynamic_data): " + str(len(dynamic_data)))
-        static_args = struct.pack(fmt, len(ids), len(dynamic_data))
-        message = CacheClient.__format_command__(command, static_args, dynamic_data)
+        # print("len(dynamic_data): " + str(len(dynamic_data)))
+        # # static_args = struct.pack(fmt, len(ids), num_bytes)
+        # message = CacheClient.__format_command__(command, static_args, dynamic_data)
 
 
-        await self.conn.send(message)
+        # assert len(dynamic_data) == num_bytes
+        # await self.conn.send(message)
 
         res = await self.conn.receive()
         if res.decode() != "Added vectors":
@@ -167,16 +198,21 @@ class CacheClient:
         
     
 
-    async def load(self, vector):
+    async def load(self, vector, options={}):
         if not self.conn.connected:
             await self.conn.connect()
 
         command = "LOAD"
         num_bytes = len(vector) * 4
+
+        nload = 1
+        if 'nLoad' in options:
+            nload = options['nLoad']
         
-        fmt = "<Q"
-        static_args = struct.pack(fmt, num_bytes)
+        fmt = "<QQ"
+        static_args = struct.pack(fmt, nload, num_bytes)
         dynamic_args = struct.pack(f'<{len(vector)}f', *vector)
+        assert num_bytes == len(dynamic_args)
         message = CacheClient.__format_command__(command, static_args, dynamic_args)
 
         await self.conn.send(message)
@@ -251,11 +287,9 @@ class CacheClient:
 
     async def deserialize_query_results(self, num_queries):
         results = []
-        print("num_queries: " + str(num_queries))
         for i in range(num_queries):
             data = await self.conn.receive(4)
             num_results = struct.unpack('i', data)[0]
-            print("num_results: " + str(num_results))
             results.append([])
             for _ in range(num_results):
                 document = await self.deserialize_document()
@@ -264,39 +298,52 @@ class CacheClient:
         return results
     
 
-    async def search(self, k, query_vectors):
+    async def search(self, k, query_vectors, options={}):
         # TODO: Check that query_vectors is a list of lists of size d
         if not self.conn.connected:
             await self.conn.connect()
 
         command = "SEARCH"
         n = len(query_vectors)
+
+        # Parse options
+        nprobe = 1
+        if 'nprobe' in options:
+            nprobe = options['nprobe']
+
+        require_all = True
+        if 'require_all' in options:
+            require_all = options['require_all']
+
         float_list = [item for sublist in query_vectors for item in sublist]
         num_bytes = len(float_list) * 4
 
-        fmt = "<QQQ"
-        static_args = struct.pack(fmt, n, k, num_bytes)
+        fmt = "<QQQ?Q"
+        static_args = struct.pack(fmt, n, k, nprobe, require_all, num_bytes)
         dynamic_args = struct.pack(f'<{len(float_list)}f', *float_list)
         message = CacheClient.__format_command__(command, static_args, dynamic_args)
 
         await self.conn.send(message)
 
         res = await self.deserialize_query_results(len(query_vectors))
-        print("RECEIVED QUERY RESULTS")
 
         await self.conn.close()
         return res
     
 
-    async def evict(self, vector):
+    async def evict(self, vector, options={}):
         if not self.conn.connected:
             await self.conn.connect()
 
         command = "EVICT"
         num_bytes = len(vector) * 4
+
+        nevict = 1
+        if 'nEvict' in options:
+            nevict = options['nEvict']
         
-        fmt = "<Q"
-        static_args = struct.pack(fmt, num_bytes)
+        fmt = "<QQ"
+        static_args = struct.pack(fmt, nevict, num_bytes)
         dynamic_args = struct.pack(f'<{len(vector)}f', *vector)
         message = CacheClient.__format_command__(command, static_args, dynamic_args)
 

@@ -6,12 +6,13 @@ import uuid
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+from pinecone import Pinecone, ServerlessSpec
 
 
 app = FastAPI()
 
 # Initialize FAISS index and storage
-dimension = 500  # Example dimension, change as needed
+dimension = 128  # Example dimension, change as needed
 index = faiss.IndexFlatL2(dimension)
 stored_objects = []
 object_indices = {}
@@ -20,7 +21,6 @@ object_indices = {}
 # Sample IVFFLAT Index
 quantizer = faiss.IndexFlatL2(dimension)
 numCells = 2000
-ivf = faiss.IndexIVFFlat(quantizer, dimension, numCells)
 
 class StoredObject(BaseModel):
     embedding: List[float]
@@ -33,6 +33,13 @@ class QueryResult(BaseModel):
 
 class IdsModel(BaseModel):
     ids: List[str]
+
+# pc = Pinecone(
+#         api_key='95c5de12-ae3b-43dd-b401-baee878d4c71'
+#     )
+# index_name = 'sift1m-index-2'
+# index = pc.Index(index_name)
+# print("Connected to index")
 
 @app.get("/v1/load_cell", response_model=QueryResult)
 def load_cell(n: int, xq: List[float] = Query(...)):
@@ -69,6 +76,29 @@ async def handle_post(request: IdsModel):
 
     # Return a response
     return {"results": results}
+
+
+def split_list(lst, chunk_size=100):
+    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+
+@app.post("/v1/pinecone")
+async def handle_pinecone_load(request: IdsModel):
+    print("Loading data from pinecone")
+    ids = request.ids
+    print("Received request with first id: " + str(ids[0]))
+
+    results = []
+    id_lists = split_list(ids)
+    for ids in id_lists:
+        response = index.fetch(ids=ids)
+        vectors = response['vectors']
+        for id, data in vectors.items():
+            embedding = data['values']
+            if len(embedding) == 0:
+                print("ERROR: FOUND EMPTY EMBEDDING")
+            results.append(StoredObject(embedding=embedding, document="document", id=id, metadata="{}"))
+
+    return { 'results': results }
 
 # Example endpoint to add embeddings to the index
 @app.post("/add_embedding")
@@ -194,9 +224,8 @@ def load_datastore():
         object_indices[id] = len(stored_objects)
         stored_objects.append(object)
     
-    ivf.train(np.vstack(embeddings))
-    print("Adding embeddings to IVF index")
-    ivf.add(np.vstack(embeddings))
+    print("Index type:")
+    print(type(index))
     index.add(np.vstack(embeddings))
 
         

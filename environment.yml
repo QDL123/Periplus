@@ -8,3 +8,6 @@ dependencies:
   - uvicorn
   - faiss
   - matplotlib
+  - pip
+  - pip:
+    - pinecone-client

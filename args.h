@@ -31,7 +31,22 @@ struct Args {
 
 protected:
     template<typename T>
+    bool isChar() {
+        if constexpr(std::is_same<T, char>::value)
+            return true;
+        return false;
+    }
+
+    template<typename T>
     std::shared_ptr<T[]> read_dynamic_data(std::istream& is, size_t size) {
+        if (isChar<T>()) {
+            std::shared_ptr<T[]> data(new T[size + 1]);
+            for (size_t i = 0; i < size; i++) {
+                this->read_arg<T>(&data[i], is);
+            }
+            data[size] = '\0'; // Add null terminator if the data is a char
+            return data;
+        }
         std::shared_ptr<T[]> data(new T[size]);
         for (size_t i = 0; i < size; i++) {
             this->read_arg<T>(&data[i], is);
@@ -99,7 +114,8 @@ struct TrainArgs : Args {
 
 
 struct LoadArgs : Args {
-    const static size_t static_size = sizeof(size_t) + sizeof(char);
+    const static size_t static_size = 2 * sizeof(size_t) + sizeof(char);
+    size_t nload;
     std::shared_ptr<float[]> xq;
     
     virtual size_t get_static_size() override { return static_size; }
@@ -109,9 +125,11 @@ struct LoadArgs : Args {
 };
 
 struct SearchArgs : Args {
-    const static size_t static_size = 3 * sizeof(size_t) + sizeof(char);
+    const static size_t static_size = 4 * sizeof(size_t) + sizeof(char) + sizeof(bool);
     size_t n;
     size_t k;
+    size_t nprobe;
+    bool require_all;
     std::shared_ptr<float[]> xq;
 
     virtual size_t get_static_size() override { return static_size; }
@@ -121,7 +139,8 @@ struct SearchArgs : Args {
 };
 
 struct EvictArgs : Args {
-    const static size_t static_size = sizeof(size_t) + sizeof(char);
+    const static size_t static_size = 2 * sizeof(size_t) + sizeof(char);
+    size_t nevict;
     std::shared_ptr<float[]> xq;
 
     virtual size_t get_static_size() override { return static_size; }

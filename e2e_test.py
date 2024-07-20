@@ -3,6 +3,7 @@ import random
 import uuid
 import faiss
 import math
+import time
 import numpy as np
 from python_client import CacheClient
 
@@ -39,7 +40,7 @@ async def main():
     ids = generate_ids(num_docs)
 
     url = "http://localhost:8000/v1/load_cell"
-    d = 500
+    d = 128
     numCells = int(4 * math.sqrt(num_docs))
 
     print("generating embeddings")
@@ -47,7 +48,10 @@ async def main():
 
     print("building local index")
     quantizer = faiss.IndexFlatL2(d)
-    index = faiss.IndexIVFFlat(quantizer, d, numCells)
+    # index = faiss.IndexIVFFlat(quantizer, d, numCells)
+    m = 16
+    index = faiss.IndexIVFPQ(quantizer, d, numCells, m, 8)
+    index.nprobe = 5
 
     index.train(np.array(embeddings))
     index.add(np.vstack(embeddings))
@@ -65,13 +69,23 @@ async def main():
 
     num_correct = 0
     num_error = 0
-    for i in range(100):
+    n_queries = 100
+    for i in range(n_queries):
         print("Testing query number: " + str(i))
-        await client.load(embeddings[i])
+        await client.load(embeddings[i], options={"nLoad":index.nprobe})
 
         k = 5
-        res = await client.search(k, [embeddings[i]])
+        # Record the start time
+        start_time = time.time()
+        res = await client.search(k, [embeddings[i]], options={"nprobe":index.nprobe})
+        # Record the end time
+        end_time = time.time()
+        # Calculate latency
+        latency = end_time - start_time
+        print("latency: " + str(latency))
         _, indices = index.search(np.array([embeddings[i]]), k)
+ 
+        await client.evict(embeddings[i], options={"nEvict":index.nprobe})
 
         correct_ids = []
         for j in range(len(indices[0])):
@@ -93,7 +107,8 @@ async def main():
         print("NUM CORRECT: " + str(num_correct))
         print("NUM WITH ERROR: " + str(num_error))
 
-
+    assert(n_queries == num_correct)
+    print("E2E TEST PASSED!")
 
 
 if __name__ == "__main__":

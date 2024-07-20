@@ -27,6 +27,7 @@ void TrainArgs::deserialize_dynamic(std::istream& is) {
 }
 
 void LoadArgs::deserialize_static(std::istream& is) {
+    this->read_arg<size_t>(&this->nload, is);
     this->read_arg<size_t>(&this->size, is);
     this->read_static_delimiter(is);
 }
@@ -42,6 +43,8 @@ void LoadArgs::deserialize_dynamic(std::istream& is) {
 void SearchArgs::deserialize_static(std::istream& is) {
     this->read_arg<size_t>(&this->n, is);
     this->read_arg<size_t>(&this->k, is);
+    this->read_arg<size_t>(&this->nprobe, is);
+    this->read_arg<bool>(&this->require_all, is);
     this->read_arg<size_t>(&this->size, is);
     this->read_static_delimiter(is);
 }
@@ -53,6 +56,7 @@ void SearchArgs::deserialize_dynamic(std::istream& is) {
 }
 
 void EvictArgs::deserialize_static(std::istream& is) {
+    this->read_arg<size_t>(&this->nevict, is);
     this->read_arg<size_t>(&this->size, is);
     this->read_static_delimiter(is);
 }
@@ -76,7 +80,7 @@ void AddArgs::deserialize_dynamic(std::istream& is) {
         this->read_arg<size_t>(&id_len, is);
         totalSize += id_len;
         totalSize += sizeof(id_len);
-        std::shared_ptr<char> id = this->read_dynamic_data<char> (is, id_len);
+        std::shared_ptr<char> id = this->read_dynamic_data<char>(is, id_len);
         this->ids.push_back(id);
     }
 

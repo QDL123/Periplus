@@ -7,7 +7,7 @@
 #include <asio/ts/buffer.hpp>
 
 
-Session::Session(asio::ip::tcp::socket socket, Cache *cache) : socket_(std::move(socket)), cache(cache), args(nullptr) {}
+Session::Session(asio::ip::tcp::socket socket, Cache *cache) : args(nullptr), socket_(std::move(socket)), cache(cache) {}
 
 void Session::start() {
     this->read_command();

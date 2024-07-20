@@ -11,11 +11,6 @@ struct Data {
     size_t document_len;
     size_t metadata_len;
 
-    // char *id;
-    // float *embedding;
-    // char *document;
-    // char *metadata;
-
     std::shared_ptr<char[]> id;
     std::shared_ptr<float[]> embedding;
     std::shared_ptr<char[]> document;

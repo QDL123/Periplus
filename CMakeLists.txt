@@ -23,6 +23,9 @@ find_package(Threads REQUIRED)
 # Find libcurl package
 find_package(CURL REQUIRED)
 
+# Find the CPR package
+find_package(cpr REQUIRED)
+
 # Set the path to the RapidJSON headers manually
 set(RAPIDJSON_INCLUDE_DIR "/opt/homebrew/include")
 
@@ -42,6 +45,7 @@ target_include_directories(tests PRIVATE
     /opt/homebrew/opt/faiss/include
     /opt/homebrew/opt/libomp/include
     /opt/homebrew/opt/curlpp/include
+    /opt/homebrew/opt/cpr/include
     ${CURL_INCLUDE_DIRS}
     ${RAPIDJSON_INCLUDE_DIR}
 )
@@ -51,7 +55,14 @@ link_directories(
     /opt/homebrew/opt/faiss/lib
     /opt/homebrew/opt/libomp/lib
     /opt/homebrew/opt/curlpp/lib
+    /opt/homebrew/opt/cpr/lib
 )
+
+# Add AddressSanitizer flags
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(tests PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
+    target_link_options(tests PRIVATE -fsanitize=address)
+endif()
 
 # Link libraries to your executable target
 target_link_libraries(tests PRIVATE
@@ -60,6 +71,7 @@ target_link_libraries(tests PRIVATE
     /opt/homebrew/opt/libomp/lib/libomp.dylib
     /opt/homebrew/opt/curlpp/lib/libcurlpp.dylib
     ${CURL_LIBRARIES}
+    /opt/homebrew/opt/cpr/lib/libcpr.dylib
 )
 
 # Define source files for the new executable that uses Asio
@@ -83,14 +95,22 @@ target_include_directories(asio_app PRIVATE
     /opt/homebrew/opt/libomp/include
     /opt/homebrew/opt/asio/include
     /opt/homebrew/opt/curlpp/include
+    /opt/homebrew/opt/cpr/include
     ${CURL_INCLUDE_DIRS}
     ${RAPIDJSON_INCLUDE_DIR}
 )
+
+# Add AddressSanitizer flags for asio_app
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(asio_app PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
+    target_link_options(asio_app PRIVATE -fsanitize=address)
+endif()
 
 # Link libraries to the new executable
 target_link_libraries(asio_app PRIVATE
     /opt/homebrew/opt/faiss/lib/libfaiss.dylib
     /opt/homebrew/opt/libomp/lib/libomp.dylib
     /opt/homebrew/opt/curlpp/lib/libcurlpp.dylib
+    /opt/homebrew/opt/cpr/lib/libcpr.dylib
     ${CURL_LIBRARIES}
 )

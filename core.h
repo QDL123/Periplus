@@ -20,35 +20,33 @@ struct Core {
     std::unique_ptr<float[]> residenceStatuses;
     std::shared_ptr<faiss::IndexFlat> quantizer;
     std::unique_ptr<faiss::IndexIVF> index;
-    std::unique_ptr<faiss::IndexIDMap> idMap;
+    // std::unique_ptr<faiss::IndexIDMap> idMap;
     std::shared_ptr<DBClient> db;    
 
     // size of nx * d 
     // std::vector< std::vector <float> > embeddings;
+    // TODO: look into other ways to generate ids;
+    faiss::idx_t next_id = 0;
     std::vector<std::vector<std::string>> ids_by_cell;
     std::vector<Data> data;
+    std::unordered_map<faiss::idx_t, Data> data_map;
+    std::unordered_map<std::string, faiss::idx_t> id_map;
     
 
     Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal);
     bool isNullTerminated(const char* str, size_t maxLength);
-    float getDensity(Data *x, size_t start, size_t range, faiss::idx_t target_centroid);
-    // size_t getCellSize(Data *x, faiss::idx_t centroidIndex, size_t prevNGuess, size_t nGuess);
 
     // May not need this is we're training the 
     // whole dataset at once. This may just be a wrapper
     void train(faiss::idx_t n, const float* x);
 
-    void loadCellWithVec(std::shared_ptr<float[]> xq);
+    void loadCellWithVec(std::shared_ptr<float[]> xq, size_t nload);
 
-    void evictCellWithVec(std::shared_ptr<float[]> xq);
-
-    // void loadCell(faiss::idx_t centroidIndex);
-
-    void loadCell(faiss::idx_t centroidIndex, float boundary_density);
+    void evictCellWithVec(std::shared_ptr<float[]> xq, size_t nevict);
     
     void loadCell(faiss::idx_t centroidIndex);
 
-    void search(size_t n, float *xq, size_t k, Data *data, int *cacheHits);
+    void search(size_t n, float *xq, size_t k, size_t nprobe, bool require_all, Data *data, int *cacheHits);
 
     void evictCell(faiss::idx_t centroidIndex);
 
