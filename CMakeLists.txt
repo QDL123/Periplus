@@ -27,14 +27,14 @@ find_package(CURL REQUIRED)
 find_package(cpr REQUIRED)
 
 # Set the path to the RapidJSON headers manually
-set(RAPIDJSON_INCLUDE_DIR "/opt/homebrew/include")
+set(RAPIDJSON_INCLUDE_DIR "/home/linuxbrew/.linuxbrew/include")
 
 # List all the source files required for the test executable, including dependencies
 set(TEST_SOURCES
-    test_core.cpp
-    core.cpp
-    db_client.cpp
-    data.cpp
+    test/unit/test_core.cpp
+    src/core.cpp
+    src/db_client.cpp
+    src/data.cpp
 )
 
 # Add an executable for the tests
@@ -42,20 +42,20 @@ add_executable(tests ${TEST_SOURCES})
 
 # Specify the directories where the compiler can find headers
 target_include_directories(tests PRIVATE
-    /opt/homebrew/opt/faiss/include
-    /opt/homebrew/opt/libomp/include
-    /opt/homebrew/opt/curlpp/include
-    /opt/homebrew/opt/cpr/include
+    /home/linuxbrew/.linuxbrew/opt/faiss/include
+    /home/linuxbrew/.linuxbrew/opt/libomp/include
+    /home/linuxbrew/.linuxbrew/opt/curlpp/include
+    /home/linuxbrew/.linuxbrew/opt/cpr/include
     ${CURL_INCLUDE_DIRS}
     ${RAPIDJSON_INCLUDE_DIR}
 )
 
 # Specify the paths where the linker can find libraries
 link_directories(
-    /opt/homebrew/opt/faiss/lib
-    /opt/homebrew/opt/libomp/lib
-    /opt/homebrew/opt/curlpp/lib
-    /opt/homebrew/opt/cpr/lib
+    /home/linuxbrew/.linuxbrew/opt/faiss/lib
+    /home/linuxbrew/.linuxbrew/opt/libomp/lib
+    /home/linuxbrew/.linuxbrew/opt/curlpp/lib
+    /home/linuxbrew/.linuxbrew/opt/cpr/lib
 )
 
 # Add AddressSanitizer flags
@@ -67,23 +67,23 @@ endif()
 # Link libraries to your executable target
 target_link_libraries(tests PRIVATE
     Catch2::Catch2WithMain
-    /opt/homebrew/opt/faiss/lib/libfaiss.dylib
-    /opt/homebrew/opt/libomp/lib/libomp.dylib
-    /opt/homebrew/opt/curlpp/lib/libcurlpp.dylib
+    /home/linuxbrew/.linuxbrew/opt/faiss/lib/libfaiss.so
+    /home/linuxbrew/.linuxbrew/opt/libomp/lib/libomp.so
+    /home/linuxbrew/.linuxbrew/opt/curlpp/lib/libcurlpp.so
     ${CURL_LIBRARIES}
-    /opt/homebrew/opt/cpr/lib/libcpr.dylib
+    /home/linuxbrew/.linuxbrew/opt/cpr/lib/libcpr.so
 )
 
 # Define source files for the new executable that uses Asio
 set(ASIO_SOURCES
-    driver.cpp
-    server.cpp  # Replace with your actual file that uses Asio
-    session.cpp
-    cache.cpp
-    core.cpp
-    db_client.cpp
-    args.cpp
-    data.cpp
+    src/driver.cpp
+    src/server.cpp  # Replace with your actual file that uses Asio
+    src/session.cpp
+    src/cache.cpp
+    src/core.cpp
+    src/db_client.cpp
+    src/args.cpp
+    src/data.cpp
 )
 
 # Add another executable that will use Asio
@@ -91,11 +91,11 @@ add_executable(asio_app ${ASIO_SOURCES})
 
 # Specify the directories where the compiler can find headers for the Asio app
 target_include_directories(asio_app PRIVATE
-    /opt/homebrew/opt/faiss/include
-    /opt/homebrew/opt/libomp/include
-    /opt/homebrew/opt/asio/include
-    /opt/homebrew/opt/curlpp/include
-    /opt/homebrew/opt/cpr/include
+    /home/linuxbrew/.linuxbrew/opt/faiss/include
+    /home/linuxbrew/.linuxbrew/opt/libomp/include
+    /home/linuxbrew/.linuxbrew/opt/asio/include
+    /home/linuxbrew/.linuxbrew/opt/curlpp/include
+    /home/linuxbrew/.linuxbrew/opt/cpr/include
     ${CURL_INCLUDE_DIRS}
     ${RAPIDJSON_INCLUDE_DIR}
 )
@@ -108,9 +108,9 @@ endif()
 
 # Link libraries to the new executable
 target_link_libraries(asio_app PRIVATE
-    /opt/homebrew/opt/faiss/lib/libfaiss.dylib
-    /opt/homebrew/opt/libomp/lib/libomp.dylib
-    /opt/homebrew/opt/curlpp/lib/libcurlpp.dylib
-    /opt/homebrew/opt/cpr/lib/libcpr.dylib
+    /home/linuxbrew/.linuxbrew/opt/faiss/lib/libfaiss.so
+    /home/linuxbrew/.linuxbrew/opt/libomp/lib/libomp.so
+    /home/linuxbrew/.linuxbrew/opt/curlpp/lib/libcurlpp.so
     ${CURL_LIBRARIES}
+    /home/linuxbrew/.linuxbrew/opt/cpr/lib/libcpr.so
 )

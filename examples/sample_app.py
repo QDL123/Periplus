@@ -1,7 +1,7 @@
 import asyncio
 import random
 import uuid
-from python_client import CacheClient
+from periplus_client import CacheClient
 from time import perf_counter
 
 

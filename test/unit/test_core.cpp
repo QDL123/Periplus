@@ -1,7 +1,7 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch_test_macros.hpp>
-#include "data.h"
-#include "core.h"
+#include "../../src/data.h"
+#include "../../src/core.h"
 #include <iostream>
 #include <cstdlib>
 #include <stdexcept>

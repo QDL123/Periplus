@@ -63,8 +63,6 @@ void Core::loadCellWithVec(std::shared_ptr<float[]> xq, size_t nload) {
             // throw std::runtime_error("Attempting to load cell already in residence. Must evict before loading again.");
             continue;
         }
-        // TODO: Decide how to set this hyperparameter
-        float density = 0.1;
         // this->loadCell(centroidIndex, density);
         this->loadCell(centroidIndices[i]);
     }

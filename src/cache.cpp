@@ -156,7 +156,6 @@ void Cache::search(std::shared_ptr<Session> session) {
     Data results[args->n * args->k];
     int cacheHits[args->n];
 
-    size_t nprobe = 1;
     bool require_all = true;
     this->core->search(args->n, args->xq.get(), args->k, args->nprobe, args->require_all, results, cacheHits);
     std::cout << "cacheHits: ";

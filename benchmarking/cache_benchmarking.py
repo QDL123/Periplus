@@ -2,7 +2,7 @@ import numpy as np
 import struct
 import time
 import asyncio
-from python_client import CacheClient
+from clients.python.client import CacheClient
 
 
 # Function to read fvecs file

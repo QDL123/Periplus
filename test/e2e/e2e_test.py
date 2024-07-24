@@ -5,7 +5,7 @@ import faiss
 import math
 import time
 import numpy as np
-from python_client import CacheClient
+from periplus_client import CacheClient
 
 
 def generate_ids(num_ids):
@@ -35,17 +35,18 @@ def generate_embeddings(d, num_embeddings):
 
 async def main():
     print("Starting e2e tests")
+    # Generate data
     num_docs = 50000
     print("generating ids")
     ids = generate_ids(num_docs)
-
-    url = "http://localhost:8000/v1/load_cell"
+    url = "http://localhost:8000/api/v1/load_data"
     d = 128
     numCells = int(4 * math.sqrt(num_docs))
-
     print("generating embeddings")
     embeddings = generate_embeddings(d, num_docs)
 
+
+    # Build the control (local) index
     print("building local index")
     quantizer = faiss.IndexFlatL2(d)
     # index = faiss.IndexIVFFlat(quantizer, d, numCells)
@@ -56,7 +57,9 @@ async def main():
     index.train(np.array(embeddings))
     index.add(np.vstack(embeddings))
 
-    client = CacheClient("localhost", 13)
+
+    # Initialize the cache
+    client = CacheClient("localhost", 3000)
 
     print("initializing cache")
     await client.initialize(d=d, db_url=url, options={"nTotal":num_docs})
@@ -70,6 +73,7 @@ async def main():
     num_correct = 0
     num_error = 0
     n_queries = 100
+    # Run queries
     for i in range(n_queries):
         print("Testing query number: " + str(i))
         await client.load(embeddings[i], options={"nLoad":index.nprobe})
