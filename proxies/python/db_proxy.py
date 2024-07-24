@@ -35,7 +35,7 @@ class IdsModel(BaseModel):
     ids: List[str]
 
 # pc = Pinecone(
-#         api_key='95c5de12-ae3b-43dd-b401-baee878d4c71'
+#         api_key='<PINECONE-API-KEY>'
 #     )
 # index_name = 'sift1m-index-2'
 # index = pc.Index(index_name)
