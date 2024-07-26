@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
         // Need to give io_context work before calling run
         TcpServer server(io_context, port);
         std::cout << "Server starting up on port: " << port << std::endl;
+        std::cout << "sizeof(float): " << sizeof(float) << std::endl;
 
         std::vector<std::thread> threads;
         // TODO: Add multithreading

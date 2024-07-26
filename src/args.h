@@ -8,6 +8,9 @@ structs passed into it to read commands.
 #ifndef ARGS_H
 #define ARGS_H
 
+#include <memory>
+#include <vector>
+#include <cstring>
 #include <iostream>
 
 enum Command {

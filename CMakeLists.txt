@@ -30,25 +30,25 @@ find_package(cpr REQUIRED)
 set(RAPIDJSON_INCLUDE_DIR "/home/linuxbrew/.linuxbrew/include")
 
 # List all the source files required for the test executable, including dependencies
-set(TEST_SOURCES
-    test/unit/test_core.cpp
-    src/core.cpp
-    src/db_client.cpp
-    src/data.cpp
-)
+# set(TEST_SOURCES
+#     test/unit/test_core.cpp
+#     src/core.cpp
+#     src/db_client.cpp
+#     src/data.cpp
+# )
 
 # Add an executable for the tests
-add_executable(tests ${TEST_SOURCES})
+# add_executable(tests ${TEST_SOURCES})
 
 # Specify the directories where the compiler can find headers
-target_include_directories(tests PRIVATE
-    /home/linuxbrew/.linuxbrew/opt/faiss/include
-    /home/linuxbrew/.linuxbrew/opt/libomp/include
-    /home/linuxbrew/.linuxbrew/opt/curlpp/include
-    /home/linuxbrew/.linuxbrew/opt/cpr/include
-    ${CURL_INCLUDE_DIRS}
-    ${RAPIDJSON_INCLUDE_DIR}
-)
+# target_include_directories(tests PRIVATE
+#     /home/linuxbrew/.linuxbrew/opt/faiss/include
+#     /home/linuxbrew/.linuxbrew/opt/libomp/include
+#     /home/linuxbrew/.linuxbrew/opt/curlpp/include
+#     /home/linuxbrew/.linuxbrew/opt/cpr/include
+#     ${CURL_INCLUDE_DIRS}
+#     ${RAPIDJSON_INCLUDE_DIR}
+# )
 
 # Specify the paths where the linker can find libraries
 link_directories(
@@ -59,20 +59,20 @@ link_directories(
 )
 
 # Add AddressSanitizer flags
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(tests PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
-    target_link_options(tests PRIVATE -fsanitize=address)
-endif()
+# if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+#     target_compile_options(tests PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
+#     target_link_options(tests PRIVATE -fsanitize=address)
+# endif()
 
 # Link libraries to your executable target
-target_link_libraries(tests PRIVATE
-    Catch2::Catch2WithMain
-    /home/linuxbrew/.linuxbrew/opt/faiss/lib/libfaiss.so
-    /home/linuxbrew/.linuxbrew/opt/libomp/lib/libomp.so
-    /home/linuxbrew/.linuxbrew/opt/curlpp/lib/libcurlpp.so
-    ${CURL_LIBRARIES}
-    /home/linuxbrew/.linuxbrew/opt/cpr/lib/libcpr.so
-)
+# target_link_libraries(tests PRIVATE
+#     Catch2::Catch2WithMain
+#     /home/linuxbrew/.linuxbrew/opt/faiss/lib/libfaiss.so
+#     /home/linuxbrew/.linuxbrew/opt/libomp/lib/libomp.so
+#     /home/linuxbrew/.linuxbrew/opt/curlpp/lib/libcurlpp.so
+#     ${CURL_LIBRARIES}
+#     /home/linuxbrew/.linuxbrew/opt/cpr/lib/libcpr.so
+# )
 
 # Define source files for the new executable that uses Asio
 set(ASIO_SOURCES

@@ -4,6 +4,8 @@
 #include "db_client.h"
 #include "data.h"
 
+#include <memory>
+
 #include <faiss/IndexIVF.h>
 #include <faiss/IndexFlat.h>
 #include <faiss/IndexIDMap.h>

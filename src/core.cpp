@@ -3,6 +3,7 @@
 #include "data.h"
 
 #include <math.h>
+#include <memory>
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -47,6 +48,14 @@ void Core::train(faiss::idx_t n, const float* x) {
     // TODO: Is this the standard way of dealing with no knowing d at compile time?
     this->centroids = std::unique_ptr<float[]>(new float[this->d * this->nCells]);
     this->quantizer->reconstruct_n(0, this->nCells, this->centroids.get());
+    for (size_t i = 0; i < this->nCells; i++) {
+        std::cout << "NEW VECTOR: ";
+        for (size_t j = 0; j < this->d; j++) {
+            std::cout << this->centroids[(i * this->d) + j] << ", ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << std::endl;
 }
 
 void Core::loadCellWithVec(std::shared_ptr<float[]> xq, size_t nload) {

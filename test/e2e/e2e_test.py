@@ -35,11 +35,13 @@ def generate_embeddings(d, num_embeddings):
 
 async def main():
     print("Starting e2e tests")
+    print("faiss version")
+    print(faiss.__version__)
     # Generate data
     num_docs = 50000
     print("generating ids")
     ids = generate_ids(num_docs)
-    url = "http://localhost:8000/api/v1/load_data"
+    url = "http://host.docker.internal:8000/api/v1/load_data"
     d = 128
     numCells = int(4 * math.sqrt(num_docs))
     print("generating embeddings")
@@ -49,6 +51,7 @@ async def main():
     # Build the control (local) index
     print("building local index")
     quantizer = faiss.IndexFlatL2(d)
+
     # index = faiss.IndexIVFFlat(quantizer, d, numCells)
     m = 16
     index = faiss.IndexIVFPQ(quantizer, d, numCells, m, 8)
@@ -57,9 +60,14 @@ async def main():
     index.train(np.array(embeddings))
     index.add(np.vstack(embeddings))
 
+    print("HELLLLO")
+    centroids = quantizer.reconstruct_n(0, numCells)
+    print("centroids:")
+    print(centroids)
+
 
     # Initialize the cache
-    client = CacheClient("localhost", 3000)
+    client = CacheClient("host.docker.internal", 3000)
 
     print("initializing cache")
     await client.initialize(d=d, db_url=url, options={"nTotal":num_docs})

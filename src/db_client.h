@@ -2,16 +2,19 @@
 #define DB_CLIENT_H
 
 #include "data.h"
+
+#include <memory>
+
 #include <faiss/IndexFlat.h>
 #include <cpr/cpr.h>
 
 struct DBClient {
     size_t d;
     size_t size;
-    std::shared_ptr<char> db_url;
+    std::shared_ptr<char[]> db_url;
     cpr::Session session;
 
-    DBClient(size_t d, std::shared_ptr<char> db_url);
+    DBClient(size_t d, std::shared_ptr<char[]> db_url);
     ~DBClient();      
     virtual void search(std::vector<std::string> ids, Data *x);
 };
