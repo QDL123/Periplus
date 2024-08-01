@@ -95,7 +95,8 @@ struct InitializeArgs : Args {
     size_t d;
     size_t max_mem;
     size_t nTotal;
-    const static size_t static_size = 24;
+    bool use_flat;
+    const static size_t static_size = 4 * sizeof(size_t) + sizeof(bool) + sizeof(char);
     std::shared_ptr<char[]> db_url;
 
     virtual size_t get_static_size() override { return static_size; };

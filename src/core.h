@@ -22,7 +22,6 @@ struct Core {
     std::unique_ptr<float[]> residenceStatuses;
     std::shared_ptr<faiss::IndexFlat> quantizer;
     std::unique_ptr<faiss::IndexIVF> index;
-    // std::unique_ptr<faiss::IndexIDMap> idMap;
     std::shared_ptr<DBClient> db;    
 
     // size of nx * d 
@@ -35,7 +34,7 @@ struct Core {
     std::unordered_map<std::string, faiss::idx_t> id_map;
     
 
-    Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal);
+    Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal, bool use_flat);
     bool isNullTerminated(const char* str, size_t maxLength);
 
     // May not need this is we're training the 

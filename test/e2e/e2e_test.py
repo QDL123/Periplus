@@ -19,6 +19,7 @@ def generate_ids(num_ids):
 
     return ids
 
+
 def generate_embeddings(d, num_embeddings):
     data = []
     random.seed(42)
@@ -33,10 +34,27 @@ def generate_embeddings(d, num_embeddings):
     return data
 
 
+def extract_centroids_from_memory(index):
+    # Number of clusters (nlist) and dimension (d)
+    nlist = index.nlist
+    d = index.d
+
+    # Initialize centroids array
+    centroids = np.zeros((nlist, d), dtype=np.float32)
+
+    # Extract centroids
+    for i in range(nlist):
+        index.quantizer.reconstruct(i, centroids[i])
+
+    return centroids
+
+
+
 async def main():
     print("Starting e2e tests")
     print("faiss version")
     print(faiss.__version__)
+    
     # Generate data
     num_docs = 50000
     print("generating ids")
@@ -52,12 +70,18 @@ async def main():
     print("building local index")
     quantizer = faiss.IndexFlatL2(d)
 
-    # index = faiss.IndexIVFFlat(quantizer, d, numCells)
-    m = 16
-    index = faiss.IndexIVFPQ(quantizer, d, numCells, m, 8)
+    index = faiss.IndexIVFFlat(quantizer, d, numCells)
+    # m = 16
+    # index = faiss.IndexIVFPQ(quantizer, d, numCells, m, 8)
     index.nprobe = 5
 
     index.train(np.array(embeddings))
+
+    centroids = extract_centroids_from_memory(index)
+
+    np.save("/app/output/output_centroids.npy", centroids)
+
+
     index.add(np.vstack(embeddings))
 
     print("HELLLLO")
@@ -70,7 +94,7 @@ async def main():
     client = CacheClient("host.docker.internal", 3000)
 
     print("initializing cache")
-    await client.initialize(d=d, db_url=url, options={"nTotal":num_docs})
+    await client.initialize(d=d, db_url=url, options={"nTotal":num_docs, "use_flat": True})
     
     print("training cache")
     await client.train(training_data=embeddings)

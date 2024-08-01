@@ -5,7 +5,7 @@ FROM --platform=linux/amd64 homebrew/brew:latest
 RUN brew install \
     cmake \
     catch2 \
-    asio \
+    asio \ 
     curl \
     cpr \
     rapidjson \

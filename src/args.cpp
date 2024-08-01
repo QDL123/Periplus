@@ -7,6 +7,7 @@ void InitializeArgs::deserialize_static(std::istream& is) {
     this->read_arg<size_t>(&this->d, is);
     this->read_arg<size_t>(&this->max_mem, is);
     this->read_arg<size_t>(&this->nTotal, is);
+    this->read_arg<bool>(&this->use_flat, is);
     this->read_arg<size_t>(&this->size, is);
 
     this->read_static_delimiter(is);
