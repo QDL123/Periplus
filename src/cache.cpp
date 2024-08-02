@@ -105,7 +105,7 @@ void Cache::initialize(std::shared_ptr<Session> session) {
     size_t nCells = determineNCells(args->nTotal);
     std::cout << "nCells: " << nCells << std::endl;
 
-    this->core = std::make_unique<Core>(args->d, db_client, nCells, args->nTotal);
+    this->core = std::make_unique<Core>(args->d, db_client, nCells, args->nTotal, args->use_flat);
 
     std::string output("Initialized cache");
     output.copy(session->data_, 1024);

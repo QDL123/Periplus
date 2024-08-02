@@ -1,9 +1,13 @@
 #include "args.h"
 
+#include <iostream>
+#include <memory>
+
 void InitializeArgs::deserialize_static(std::istream& is) {
     this->read_arg<size_t>(&this->d, is);
     this->read_arg<size_t>(&this->max_mem, is);
     this->read_arg<size_t>(&this->nTotal, is);
+    this->read_arg<bool>(&this->use_flat, is);
     this->read_arg<size_t>(&this->size, is);
 
     this->read_static_delimiter(is);
@@ -80,7 +84,7 @@ void AddArgs::deserialize_dynamic(std::istream& is) {
         this->read_arg<size_t>(&id_len, is);
         totalSize += id_len;
         totalSize += sizeof(id_len);
-        std::shared_ptr<char> id = this->read_dynamic_data<char>(is, id_len);
+        std::shared_ptr<char[]> id = this->read_dynamic_data<char>(is, id_len);
         this->ids.push_back(id);
     }
 

@@ -1,6 +1,9 @@
 #include "data.h"
+
+#include <memory>
 #include <iostream>
 #include <cstring>
+#include <vector>
 
 
 Data::Data()

@@ -1,11 +1,13 @@
 #include "db_client.h"
 #include "data.h" 
 
+#include <iostream>
+#include <memory>
+
 #include <curl/curl.h>
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
-#include <iostream>
 #include <faiss/IndexFlat.h>
 #include <cpr/cpr.h>
 
@@ -16,7 +18,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
 }
 
 
-DBClient::DBClient(size_t d, std::shared_ptr<char> db_url) {
+DBClient::DBClient(size_t d, std::shared_ptr<char[]> db_url) {
     this->d = d;
     this->size = 0;
     this->db_url = db_url;
@@ -136,12 +138,12 @@ void DBClient::search(std::vector<std::string> ids, Data *x) {
                 if (item.HasMember("id") && item["id"].IsString()) {
                     const char* id_str = item["id"].GetString();
                     x[i].id_len = std::strlen(id_str);
-                    x[i].id = std::shared_ptr<char>(new char[x[i].id_len + 1]);
+                    x[i].id = std::shared_ptr<char[]>(new char[x[i].id_len + 1]);
                     std::strcpy(x[i].id.get(), id_str);
                 }
                 if (item.HasMember("embedding") && item["embedding"].IsArray()) {
                     x[i].embedding_len = item["embedding"].Size();
-                    x[i].embedding = std::shared_ptr<float>(new float[x[i].embedding_len]);
+                    x[i].embedding = std::shared_ptr<float[]>(new float[x[i].embedding_len]);
                     size_t index = 0;
                     for (const auto& val : item["embedding"].GetArray()) {
                         if (val.IsFloat()) {
@@ -156,13 +158,13 @@ void DBClient::search(std::vector<std::string> ids, Data *x) {
                 if (item.HasMember("document") && item["document"].IsString()) {
                     const char* document_str = item["document"].GetString();
                     x[i].document_len = std::strlen(document_str);
-                    x[i].document = std::shared_ptr<char>(new char[x[i].document_len + 1]);
+                    x[i].document = std::shared_ptr<char[]>(new char[x[i].document_len + 1]);
                     std::strcpy(x[i].document.get(), document_str);
                 }
                 if (item.HasMember("metadata") && item["metadata"].IsString()) {
                     const char* metadata_str = item["metadata"].GetString();
                     x[i].metadata_len = std::strlen(metadata_str);
-                    x[i].metadata = std::shared_ptr<char>(new char[x[i].metadata_len + 1]);
+                    x[i].metadata = std::shared_ptr<char[]>(new char[x[i].metadata_len + 1]);
                     std::strcpy(x[i].metadata.get(), metadata_str);
                 }
 
@@ -178,7 +180,7 @@ void DBClient::search(std::vector<std::string> ids, Data *x) {
 
 
 // MOCK DB Client Implementation //////
-DBClient_Mock::DBClient_Mock(size_t d) : DBClient(d, std::shared_ptr<char>(nullptr)) {
+DBClient_Mock::DBClient_Mock(size_t d) : DBClient(d, std::shared_ptr<char[]>(nullptr)) {
     this->data_map = std::unordered_map<std::string, Data>();
 }
 

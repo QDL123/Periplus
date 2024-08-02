@@ -56,7 +56,7 @@ TEST_CASE("Construct Cache Core", "[Core]") {
     size_t d = 10;
     float nTotal = 10000;
     std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient_Mock(d));
-    Core core(d, client, 100, nTotal);
+    Core core(d, client, 100, nTotal, false);
 
     REQUIRE(core.d == d);
 }
@@ -67,7 +67,7 @@ TEST_CASE("Train the cache core", "[Core::train]") {
     size_t d = 10;
     float nTotal = 10000;
     std::shared_ptr<DBClient> client = std::shared_ptr<DBClient>(new DBClient_Mock(d));
-    Core core(d, client, 4, nTotal);
+    Core core(d, client, 4, nTotal, false);
 
     // Build the dataset
     faiss::idx_t n = 100000;
@@ -93,7 +93,7 @@ TEST_CASE("Load Cell", "[Core::loadCell]") {
     float nTotal = 800;
     std::shared_ptr<DBClient_Mock> client = std::shared_ptr<DBClient_Mock>(new DBClient_Mock(d));
     size_t nCells = 4;
-    Core core(d, client, nCells, nTotal);
+    Core core(d, client, nCells, nTotal, false);
 
     // Manually set the centroids for testing purposes
     const float centroids[] = {100, 100, -100, 100, 100, -100, -100, -100};
@@ -146,7 +146,7 @@ TEST_CASE("Search", "[Core::search]") {
     float nTotal = 800;
     std::shared_ptr<DBClient_Mock> client = std::shared_ptr<DBClient_Mock>(new DBClient_Mock(d));
     size_t nCells = 4;
-    Core core(d, client, nCells, nTotal);
+    Core core(d, client, nCells, nTotal, false);
 
     // Manually set the centroids for testing purposes
     const float centroids[] = {100, 100, -100, 100, 100, -100, -100, -100};
@@ -221,7 +221,7 @@ TEST_CASE("Evict cell", "[Core::evictCell]") {
     float nTotal = 800;
     std::shared_ptr<DBClient_Mock> client = std::shared_ptr<DBClient_Mock>(new DBClient_Mock(d));
     size_t nCells = 4;
-    Core core(d, client, nCells, nTotal);
+    Core core(d, client, nCells, nTotal, false);
 
     // Manually set the centroids for testing purposes
     const float centroids[] = {100, 100, -100, 100, 100, -100, -100, -100};

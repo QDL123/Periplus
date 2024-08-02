@@ -3,32 +3,34 @@
 #include "data.h"
 
 #include <math.h>
+#include <memory>
 #include <iostream>
 #include <vector>
 #include <algorithm>
 #include <stdexcept>
 #include <chrono>
+#include <fstream>
 
 #include <faiss/IndexIVFFlat.h>
 #include <faiss/IndexIVFPQ.h>
 #include <faiss/IndexFlat.h>
 
 
-Core::Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal) : d{d}, db{db}, nCells{nCells}, nTotal{nTotal}  {
+Core::Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal, bool use_flat) : d{d}, db{db}, nCells{nCells}, nTotal{nTotal}  {
     // Make randomness in faiss algos repeatable and predicatable
     // faiss::RandomGenerator rng(1234);
-    // TODO: use make_shared
     this->quantizer = std::shared_ptr<faiss::IndexFlatL2>(new faiss::IndexFlatL2(this->d));
 
-    size_t m = 16; // TODO: adjust m to fit d
+    size_t m = 16; // TODO: adjust m to fit d (AutoTune?)
     // Low dimensional embeddings don't need to be product quantization
     // Embeddings with dimensions no divisible by m can't be quantized
-    if (d < 64 || d % 16 != 0) {
+    if (use_flat || (d < 64 || d % 8 != 0)) {
+        std::cout << "instantiating IndexIVFFlat" << "\n";
         this->index = std::unique_ptr<faiss::IndexIVFFlat>(new faiss::IndexIVFFlat(this->quantizer.get(), this->d, this->nCells));
     } else {
-        this->index = std::unique_ptr<faiss::IndexIVFPQ>(new faiss::IndexIVFPQ(this->quantizer.get(), this->d, nCells, m, 8));
+        std::cout << "instantiating IndexIVFPQ" << "\n";
+        this->index = std::unique_ptr<faiss::IndexIVFPQ>(new faiss::IndexIVFPQ(this->quantizer.get(), this->d, this->nCells, m, 8));
     }
-    // this->idMap = std::unique_ptr<faiss::IndexIDMap>(new faiss::IndexIDMap(this->index.get()));
     this->residenceStatuses = std::unique_ptr<float[]>(new float[this->nCells]);
     for (size_t i = 0; i < this->nCells; i++) {
         this->residenceStatuses[i] = -1;

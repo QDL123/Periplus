@@ -27,8 +27,12 @@ class CacheClient:
         if 'nTotal' in options:
             nTotal = options['nTotal']
 
-        fmt = '<QQQQ'
-        static_args = struct.pack(fmt, d, max_mem, nTotal, len(db_url))
+        use_flat = False
+        if 'use_flat' in options:
+            use_flat = options['use_flat']
+
+        fmt = '<QQQ?Q'
+        static_args = struct.pack(fmt, d, max_mem, nTotal, use_flat, len(db_url))
         dynamic_args = db_url.encode('latin1')
         message = CacheClient.__format_command__(command, static_args, dynamic_args)
 
@@ -114,20 +118,13 @@ class CacheClient:
             id_data += id
 
             await self.conn.send(id_data)
-            # dynamic_data += struct.pack('<Q', length)
-            # # Pack the string with the corresponding length
-            # # dynamic_data += struct.pack(f'{length}s', id.encode('utf-8'))
 
-            # dynamic_data += id.encode('latin1')
 
         print("Sending id / embedding delimiter")
         # Send the id / embedding delimiter
         delimiter = b'\n'
         await self.conn.send(delimiter.decode('latin1'))
 
-
-        # Add the newline character as bytes
-        # dynamic_data += b'\n'
         # Send the embeddings
         print("Sending embeddings")
         for i, embedding in enumerate(embeddings):
@@ -137,23 +134,6 @@ class CacheClient:
             await self.conn.send(embedding_data.decode('latin1'))
         
         await self.conn.send("\r\n")
-
-        # float_list = [item for sublist in embeddings for item in sublist]
-
-        # dynamic_data += struct.pack(f'<{len(float_list)}f', *float_list)
-
-        # # # Serialize the floating-point numbers
-        # # for embedding in embeddings:
-        # #     for num in embedding:
-        # #         dynamic_data += struct.pack('f', num)
-
-        # print("len(dynamic_data): " + str(len(dynamic_data)))
-        # # static_args = struct.pack(fmt, len(ids), num_bytes)
-        # message = CacheClient.__format_command__(command, static_args, dynamic_data)
-
-
-        # assert len(dynamic_data) == num_bytes
-        # await self.conn.send(message)
 
         res = await self.conn.receive()
         if res.decode() != "Added vectors":

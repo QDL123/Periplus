@@ -1,8 +1,10 @@
 #ifndef DATA_H
 #define DATA_H
 
+#include <memory>
 #include <cstddef>
 #include <iostream>
+#include <vector>
 
 struct Data {
 
