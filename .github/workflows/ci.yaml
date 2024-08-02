@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   integration_tests:
@@ -16,7 +16,6 @@ jobs:
     services:
       periplus:
         image: periplus_image:latest
-        platforms: linux/amd64
         ports:
           - 3000:3000
 
@@ -42,7 +41,7 @@ jobs:
 
       - name: Build Proxy image
         run: |
-          docker build -t proxy_image:latest -f proxy.Dockerfile .
+          docker buildx build --platform linux/amd64 -t proxy_image:latest -f proxy.Dockerfile --load .
 
       - name: Run Periplus container
         run: |
@@ -50,7 +49,7 @@ jobs:
 
       - name: Run Proxy container
         run: |
-          docker run -d -p 8000:8000 --name proxy proxy_image:latest
+          docker run -d --platform linux/amd64 -p 8000:8000 --name proxy proxy_image:latest
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -64,7 +63,7 @@ jobs:
 
       - name: Run end-to-end tests
         run: |
-          python tests/e2e/e2e_test.py
+          python test/e2e/e2e_test.py
 
       - name: Archive test reports
         uses: actions/upload-artifact@v2
