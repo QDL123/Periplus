@@ -34,22 +34,6 @@ def generate_embeddings(d, num_embeddings):
     return data
 
 
-def extract_centroids_from_memory(index):
-    # Number of clusters (nlist) and dimension (d)
-    nlist = index.nlist
-    d = index.d
-
-    # Initialize centroids array
-    centroids = np.zeros((nlist, d), dtype=np.float32)
-
-    # Extract centroids
-    for i in range(nlist):
-        index.quantizer.reconstruct(i, centroids[i])
-
-    return centroids
-
-
-
 async def main():
     print("Starting e2e tests")
     print("faiss version")
@@ -76,18 +60,10 @@ async def main():
     index.nprobe = 5
 
     index.train(np.array(embeddings))
-
-    centroids = extract_centroids_from_memory(index)
-
-    np.save("/app/output/output_centroids.npy", centroids)
-
-
+    
     index.add(np.vstack(embeddings))
 
     print("HELLLLO")
-    centroids = quantizer.reconstruct_n(0, numCells)
-    print("centroids:")
-    print(centroids)
 
 
     # Initialize the cache
