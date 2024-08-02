@@ -13,17 +13,6 @@ jobs:
   integration_tests:
     runs-on: ubuntu-latest
 
-    services:
-      periplus:
-        image: periplus_image:latest
-        ports:
-          - 3000:3000
-
-      proxy:
-        image: proxy_image:latest
-        ports:
-          - 8000:8000
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -35,21 +24,23 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Build Periplus image
+        id: build_periplus_image
         run: |
           docker buildx create --use
           docker buildx build --platform linux/amd64 -t periplus_image:latest -f Dockerfile --load .
 
       - name: Build Proxy image
+        id: build_proxy_image
         run: |
           docker buildx build --platform linux/amd64 -t proxy_image:latest -f proxy.Dockerfile --load .
 
       - name: Run Periplus container
         run: |
-          docker run -d --platform linux/amd64 -p 3000:3000 --name periplus periplus_image:latest
+          docker run -d --name periplus -p 3000:3000 periplus_image:latest
 
       - name: Run Proxy container
         run: |
-          docker run -d --platform linux/amd64 -p 8000:8000 --name proxy proxy_image:latest
+          docker run -d --name proxy -p 8000:8000 proxy_image:latest
 
       - name: Set up Python
         uses: actions/setup-python@v2
