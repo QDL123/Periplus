@@ -43,7 +43,7 @@ async def main():
     num_docs = 50000
     print("generating ids")
     ids = generate_ids(num_docs)
-    url = "http://host.docker.internal:8000/api/v1/load_data"
+    url = "http://proxy:8000/api/v1/load_data"
     d = 128
     numCells = int(4 * math.sqrt(num_docs))
     print("generating embeddings")
@@ -67,7 +67,7 @@ async def main():
 
 
     # Initialize the cache
-    client = CacheClient("host.docker.internal", 3000)
+    client = CacheClient("periplus", 3000)
 
     print("initializing cache")
     await client.initialize(d=d, db_url=url, options={"nTotal":num_docs, "use_flat": True})
