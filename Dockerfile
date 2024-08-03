@@ -29,4 +29,4 @@ RUN cmake -S . -B build \
     && cmake --build build
 
 # Default command
-CMD ["./build/asio_app", "-p", "3000"]
+CMD ["./build/periplus", "-p", "3000"]
