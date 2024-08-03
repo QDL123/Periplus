@@ -48,7 +48,7 @@ jobs:
 
       - name: Wait for Periplus to be ready
         run: |
-          while ! nc -z periplus 3000; do
+          while ! docker exec periplus nc -z localhost 3000; do
             echo "Waiting for Periplus service..."
             sleep 5
           done
@@ -56,7 +56,7 @@ jobs:
 
       - name: Wait for Proxy to be ready
         run: |
-          while ! nc -z proxy 8000; do
+          while ! docker exec proxy nc -z localhost 8000; do
             echo "Waiting for Proxy service..."
             sleep 5
           done
