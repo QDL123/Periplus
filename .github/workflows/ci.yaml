@@ -89,7 +89,7 @@ jobs:
         if: failure()
         run: |
           exit_code=$(cat exit_code.txt)
-          if [ "$exit_code" -ne 0 ]; then
+          if [ "$exit_code" -ne 0]; then
             echo "Tests failed with exit code $exit_code"
             exit $exit_code
           fi

@@ -10,8 +10,8 @@ COPY . .
 # Change directory to test/e2e
 WORKDIR /app/test/e2e
 
-# Install netcat
-RUN apt-get update && apt-get install -y netcat
+# Install netcat-openbsd
+RUN apt-get update && apt-get install -y netcat-openbsd
 
 # Create the conda environment named e2e_env and install dependencies
 RUN conda env create -f environment.yml
