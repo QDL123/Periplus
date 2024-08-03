@@ -15,13 +15,13 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
 # Enforce consistent floating-point behavior
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(
-        -ffloat-store
-        -frounding-math
-        -mfpmath=sse
-    )
-endif()
+# if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+#     add_compile_options(
+#         -ffloat-store
+#         -frounding-math
+#         -mfpmath=sse
+#     )
+# endif()
 
 # Find the Catch2 package
 find_package(Catch2 3 REQUIRED)
@@ -36,8 +36,14 @@ find_package(CURL REQUIRED)
 # Find the CPR package
 find_package(cpr REQUIRED)
 
-# Set the path to the RapidJSON headers manually
-set(RAPIDJSON_INCLUDE_DIR "/home/linuxbrew/.linuxbrew/include")
+# Set the path to the RapidJSON headers manually if not found by CMake
+if(NOT DEFINED RAPIDJSON_INCLUDE_DIR)
+  if (APPLE)
+    set(RAPIDJSON_INCLUDE_DIR "/opt/homebrew/opt/rapidjson/include")
+  else()
+    set(RAPIDJSON_INCLUDE_DIR "/home/linuxbrew/.linuxbrew/opt/rapidjson/include")
+  endif()
+endif()
 
 set(TEST_SOURCES
     test/unit/test_core.cpp
@@ -160,13 +166,13 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU
 endif()
 
 # Apply floating-point flags specifically to the periplus target
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(periplus PRIVATE
-        -ffloat-store
-        -frounding-math
-        -mfpmath=sse
-    )
-endif()
+# if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+#     target_compile_options(periplus PRIVATE
+#         -ffloat-store
+#         -frounding-math
+#         -mfpmath=sse
+#     )
+# endif()
 
 # Link libraries to the new executable
 if (APPLE)
