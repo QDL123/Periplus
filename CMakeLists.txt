@@ -29,7 +29,6 @@ find_package(Catch2 3 REQUIRED)
 # Add the threading package to handle any threading needs of Asio
 find_package(Threads REQUIRED)
 
-# TODO: Can we get rid of that?
 # Find libcurl package
 find_package(CURL REQUIRED)
 
@@ -62,6 +61,7 @@ if (APPLE)
         /opt/homebrew/opt/libomp/include
         /opt/homebrew/opt/curlpp/include
         /opt/homebrew/opt/cpr/include
+        /opt/homebrew/opt/catch2/include
         ${CURL_INCLUDE_DIRS}
         ${RAPIDJSON_INCLUDE_DIR}
     )
@@ -70,6 +70,7 @@ if (APPLE)
         /opt/homebrew/opt/libomp/lib
         /opt/homebrew/opt/curlpp/lib
         /opt/homebrew/opt/cpr/lib
+        /opt/homebrew/opt/catch2/lib
     )
 else()
     target_include_directories(tests PRIVATE
@@ -77,6 +78,7 @@ else()
         /home/linuxbrew/.linuxbrew/opt/libomp/include
         /home/linuxbrew/.linuxbrew/opt/curlpp/include
         /home/linuxbrew/.linuxbrew/opt/cpr/include
+        /home/linuxbrew/.linuxbrew/opt/catch2/include
         ${CURL_INCLUDE_DIRS}
         ${RAPIDJSON_INCLUDE_DIR}
     )
@@ -85,6 +87,7 @@ else()
         /home/linuxbrew/.linuxbrew/opt/libomp/lib
         /home/linuxbrew/.linuxbrew/opt/curlpp/lib
         /home/linuxbrew/.linuxbrew/opt/cpr/lib
+        /home/linuxbrew/.linuxbrew/opt/catch2/lib
     )
 endif()
 
