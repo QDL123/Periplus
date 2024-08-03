@@ -119,7 +119,7 @@ jobs:
       - name: Build the project
         run: |
           cd build
-          cmake -DCMAKE_PREFIX_PATH="$(brew --prefix catch2)" ..
+          cmake ..
           make
 
       - name: Run Catch2 tests

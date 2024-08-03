@@ -23,6 +23,13 @@ endif()
 #     )
 # endif()
 
+# Set CMAKE_PREFIX_PATH for Catch2 and RapidJSON
+if (APPLE)
+    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/catch2" "/opt/homebrew/opt/rapidjson")
+else()
+    list(APPEND CMAKE_PREFIX_PATH "/home/linuxbrew/.linuxbrew/opt/catch2" "/home/linuxbrew/.linuxbrew/opt/rapidjson")
+endif()
+
 # Find the Catch2 package
 find_package(Catch2 3 REQUIRED)
 
@@ -36,12 +43,10 @@ find_package(CURL REQUIRED)
 find_package(cpr REQUIRED)
 
 # Set the path to the RapidJSON headers manually if not found by CMake
-if(NOT DEFINED RAPIDJSON_INCLUDE_DIR)
-  if (APPLE)
+if (APPLE)
     set(RAPIDJSON_INCLUDE_DIR "/opt/homebrew/opt/rapidjson/include")
-  else()
+else()
     set(RAPIDJSON_INCLUDE_DIR "/home/linuxbrew/.linuxbrew/opt/rapidjson/include")
-  endif()
 endif()
 
 set(TEST_SOURCES
@@ -61,7 +66,6 @@ if (APPLE)
         /opt/homebrew/opt/libomp/include
         /opt/homebrew/opt/curlpp/include
         /opt/homebrew/opt/cpr/include
-        /opt/homebrew/opt/catch2/include
         ${CURL_INCLUDE_DIRS}
         ${RAPIDJSON_INCLUDE_DIR}
     )
@@ -70,7 +74,6 @@ if (APPLE)
         /opt/homebrew/opt/libomp/lib
         /opt/homebrew/opt/curlpp/lib
         /opt/homebrew/opt/cpr/lib
-        /opt/homebrew/opt/catch2/lib
     )
 else()
     target_include_directories(tests PRIVATE
@@ -78,7 +81,6 @@ else()
         /home/linuxbrew/.linuxbrew/opt/libomp/include
         /home/linuxbrew/.linuxbrew/opt/curlpp/include
         /home/linuxbrew/.linuxbrew/opt/cpr/include
-        /home/linuxbrew/.linuxbrew/opt/catch2/include
         ${CURL_INCLUDE_DIRS}
         ${RAPIDJSON_INCLUDE_DIR}
     )
@@ -87,7 +89,6 @@ else()
         /home/linuxbrew/.linuxbrew/opt/libomp/lib
         /home/linuxbrew/.linuxbrew/opt/curlpp/lib
         /home/linuxbrew/.linuxbrew/opt/cpr/lib
-        /home/linuxbrew/.linuxbrew/opt/catch2/lib
     )
 endif()
 
