@@ -105,10 +105,12 @@ jobs:
           sudo apt-get install -y build-essential curl file git
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
           echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >>~/.profile
+          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >>~/.bashrc
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
       - name: Install dependencies
         run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew install faiss cpr rapidjson libomp catch2 cmake
 
       - name: Create build directory
