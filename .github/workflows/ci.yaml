@@ -46,9 +46,13 @@ jobs:
         run: |
           docker run -d --name proxy --network my_network -p 8000:8000 proxy_image:latest
 
+      - name: Build Test Driver image
+        run: |
+          docker build -t test_driver_image -f driver.Dockerfile .
+
       - name: Wait for Periplus to be ready
         run: |
-          while ! docker exec periplus nc -z localhost 3000; do
+          while ! docker run --network my_network --rm test_driver_image nc -z periplus 3000; do
             echo "Waiting for Periplus service..."
             sleep 5
           done
@@ -56,15 +60,14 @@ jobs:
 
       - name: Wait for Proxy to be ready
         run: |
-          while ! docker exec proxy nc -z localhost 8000; do
+          while ! docker run --network my_network --rm test_driver_image nc -z proxy 8000; do
             echo "Waiting for Proxy service..."
             sleep 5
           done
           echo "Proxy is up!"
 
-      - name: Build and Run Test Driver
+      - name: Run Test Driver
         run: |
-          docker build -t test_driver_image -f driver.Dockerfile .
           docker run --network my_network --name test_driver_container test_driver_image || echo $? > exit_code.txt
 
       - name: Get Test Driver Exit Code
