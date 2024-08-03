@@ -5,13 +5,11 @@ FROM --platform=linux/amd64 homebrew/brew:latest
 RUN brew install \
     cmake \
     catch2 \
-    asio \ 
-    curl \
+    asio \
     cpr \
     rapidjson \
     faiss \
-    libomp \
-    curlpp
+    libomp
 
 # Set working directory
 WORKDIR /app
