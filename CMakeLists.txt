@@ -21,12 +21,18 @@ if (APPLE)
     set(LIBOMP_LIBRARY "${DEPENDENCIES_PREFIX}/libomp/lib/libomp.dylib")
     set(CURL_LIBRARY "${DEPENDENCIES_PREFIX}/curl/lib/libcurl.dylib")
     set(CPR_LIBRARY "${DEPENDENCIES_PREFIX}/cpr/lib/libcpr.dylib")
+
+    # Set directory for find package to locate catch2
+    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/catch2")
 else()
     set(DEPENDENCIES_PREFIX "/home/linuxbrew/.linuxbrew/opt")
     set(FAISS_LIBRARY "${DEPENDENCIES_PREFIX}/faiss/lib/libfaiss.so")
     set(LIBOMP_LIBRARY "${DEPENDENCIES_PREFIX}/libomp/lib/libomp.so")
     set(CURL_LIBRARY "${DEPENDENCIES_PREFIX}/curl/lib/libcurl.so")
     set(CPR_LIBRARY "${DEPENDENCIES_PREFIX}/cpr/lib/libcpr.so")
+
+    # Set directory for find package to locate catch2
+    list(APPEND CMAKE_PREFIX_PATH "/home/linuxbrew/.linuxbrew/opt/catch2")
 endif()
 
 set(FAISS_INCLUDE_DIR "${DEPENDENCIES_PREFIX}/faiss/include")
