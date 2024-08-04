@@ -14,15 +14,6 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(/wd4996)
 endif()
 
-# Enforce consistent floating-point behavior
-# if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-#     add_compile_options(
-#         -ffloat-store
-#         -frounding-math
-#         -mfpmath=sse
-#     )
-# endif()
-
 # Set CMAKE_PREFIX_PATH for Catch2 and RapidJSON
 if (APPLE)
     list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/catch2" "/opt/homebrew/opt/rapidjson")
@@ -37,7 +28,13 @@ find_package(Catch2 3 REQUIRED)
 find_package(Threads REQUIRED)
 
 # Find the CURL package
-find_package(CURL REQUIRED)
+if (APPLE)
+    set(CURL_INCLUDE_DIR "/opt/homebrew/opt/curl/include")
+    set(CURL_LIBRARY "/opt/homebrew/opt/curl/lib/libcurl.dylib")
+else()
+    set(CURL_INCLUDE_DIR "/home/linuxbrew/.linuxbrew/opt/curl/include")
+    set(CURL_LIBRARY "/home/linuxbrew/.linuxbrew/opt/curl/lib/libcurl.so")
+endif()
 
 # Find the CPR package
 find_package(cpr REQUIRED)
@@ -64,8 +61,8 @@ if (APPLE)
     target_include_directories(tests PRIVATE
         /opt/homebrew/opt/faiss/include
         /opt/homebrew/opt/libomp/include
+        ${CURL_INCLUDE_DIR}
         /opt/homebrew/opt/cpr/include
-        ${CURL_INCLUDE_DIRS}
         ${RAPIDJSON_INCLUDE_DIR}
     )
     link_directories(
@@ -77,8 +74,8 @@ else()
     target_include_directories(tests PRIVATE
         /home/linuxbrew/.linuxbrew/opt/faiss/include
         /home/linuxbrew/.linuxbrew/opt/libomp/include
+        ${CURL_INCLUDE_DIR}
         /home/linuxbrew/.linuxbrew/opt/cpr/include
-        ${CURL_INCLUDE_DIRS}
         ${RAPIDJSON_INCLUDE_DIR}
     )
     link_directories(
@@ -94,7 +91,7 @@ if (APPLE)
         Catch2::Catch2WithMain
         /opt/homebrew/opt/faiss/lib/libfaiss.dylib
         /opt/homebrew/opt/libomp/lib/libomp.dylib
-        ${CURL_LIBRARIES}
+        ${CURL_LIBRARY}
         /opt/homebrew/opt/cpr/lib/libcpr.dylib
     )
 else()
@@ -102,7 +99,7 @@ else()
         Catch2::Catch2WithMain
         /home/linuxbrew/.linuxbrew/opt/faiss/lib/libfaiss.so
         /home/linuxbrew/.linuxbrew/opt/libomp/lib/libomp.so
-        ${CURL_LIBRARIES}
+        ${CURL_LIBRARY}
         /home/linuxbrew/.linuxbrew/opt/cpr/lib/libcpr.so
     )
 endif()
@@ -128,8 +125,8 @@ if (APPLE)
         /opt/homebrew/opt/faiss/include
         /opt/homebrew/opt/libomp/include
         /opt/homebrew/opt/asio/include
+        ${CURL_INCLUDE_DIR}
         /opt/homebrew/opt/cpr/include
-        ${CURL_INCLUDE_DIRS}
         ${RAPIDJSON_INCLUDE_DIR}
     )
     link_directories(
@@ -142,8 +139,8 @@ else()
         /home/linuxbrew/.linuxbrew/opt/faiss/include
         /home/linuxbrew/.linuxbrew/opt/libomp/include
         /home/linuxbrew/.linuxbrew/opt/asio/include
+        ${CURL_INCLUDE_DIR}
         /home/linuxbrew/.linuxbrew/opt/cpr/include
-        ${CURL_INCLUDE_DIRS}
         ${RAPIDJSON_INCLUDE_DIR}
     )
     link_directories(
@@ -173,14 +170,14 @@ if (APPLE)
     target_link_libraries(periplus PRIVATE
         /opt/homebrew/opt/faiss/lib/libfaiss.dylib
         /opt/homebrew/opt/libomp/lib/libomp.dylib
-        ${CURL_LIBRARIES}
+        ${CURL_LIBRARY}
         /opt/homebrew/opt/cpr/lib/libcpr.dylib
     )
 else()
     target_link_libraries(periplus PRIVATE
         /home/linuxbrew/.linuxbrew/opt/faiss/lib/libfaiss.so
         /home/linuxbrew/.linuxbrew/opt/libomp/lib/libomp.so
-        ${CURL_LIBRARIES}
+        ${CURL_LIBRARY}
         /home/linuxbrew/.linuxbrew/opt/cpr/lib/libcpr.so
     )
 endif()
