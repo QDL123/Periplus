@@ -5,13 +5,12 @@ FROM --platform=linux/amd64 homebrew/brew:latest
 RUN brew install \
     cmake \
     catch2 \
-    asio \ 
+    asio \
     curl \
     cpr \
     rapidjson \
     faiss \
-    libomp \
-    curlpp
+    libomp
 
 # Set working directory
 WORKDIR /app
@@ -26,7 +25,7 @@ ENV CMAKE_LIBRARY_PATH=/home/linuxbrew/.linuxbrew/lib
 
 # Build the project
 RUN cmake -S . -B build \
-    && cmake --build build
+    && cmake --build build --target periplus
 
 # Default command
-CMD ["./build/asio_app", "-p", "3000"]
+CMD ["./build/periplus", "-p", "3000"]
