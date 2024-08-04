@@ -14,38 +14,28 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(/wd4996)
 endif()
 
-# Set CMAKE_PREFIX_PATH for Catch2 and RapidJSON
+# Detect platform and set paths for dependencies
 if (APPLE)
-    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/catch2" "/opt/homebrew/opt/rapidjson")
+    set(DEPENDENCIES_PREFIX "/opt/homebrew/opt")
 else()
-    list(APPEND CMAKE_PREFIX_PATH "/home/linuxbrew/.linuxbrew/opt/catch2" "/home/linuxbrew/.linuxbrew/opt/rapidjson")
+    set(DEPENDENCIES_PREFIX "/home/linuxbrew/.linuxbrew/opt")
 endif()
+
+set(FAISS_INCLUDE_DIR "${DEPENDENCIES_PREFIX}/faiss/include")
+set(FAISS_LIBRARY "${DEPENDENCIES_PREFIX}/faiss/lib/libfaiss.dylib")
+set(LIBOMP_INCLUDE_DIR "${DEPENDENCIES_PREFIX}/libomp/include")
+set(LIBOMP_LIBRARY "${DEPENDENCIES_PREFIX}/libomp/lib/libomp.dylib")
+set(CURL_INCLUDE_DIR "${DEPENDENCIES_PREFIX}/curl/include")
+set(CURL_LIBRARY "${DEPENDENCIES_PREFIX}/curl/lib/libcurl.dylib")
+set(CPR_INCLUDE_DIR "${DEPENDENCIES_PREFIX}/cpr/include")
+set(CPR_LIBRARY "${DEPENDENCIES_PREFIX}/cpr/lib/libcpr.dylib")
+set(RAPIDJSON_INCLUDE_DIR "${DEPENDENCIES_PREFIX}/rapidjson/include")
+set(ASIO_INCLUDE_DIR "${DEPENDENCIES_PREFIX}/asio/include")
 
 # Find the Catch2 package
 find_package(Catch2 3 REQUIRED)
 
-# Add the threading package to handle any threading needs of Asio
-find_package(Threads REQUIRED)
-
-# Find the CURL package
-if (APPLE)
-    set(CURL_INCLUDE_DIR "/opt/homebrew/opt/curl/include")
-    set(CURL_LIBRARY "/opt/homebrew/opt/curl/lib/libcurl.dylib")
-else()
-    set(CURL_INCLUDE_DIR "/home/linuxbrew/.linuxbrew/opt/curl/include")
-    set(CURL_LIBRARY "/home/linuxbrew/.linuxbrew/opt/curl/lib/libcurl.so")
-endif()
-
-# Find the CPR package
-find_package(cpr REQUIRED)
-
-# Set the path to the RapidJSON headers manually if not found by CMake
-if (APPLE)
-    set(RAPIDJSON_INCLUDE_DIR "/opt/homebrew/opt/rapidjson/include")
-else()
-    set(RAPIDJSON_INCLUDE_DIR "/home/linuxbrew/.linuxbrew/opt/rapidjson/include")
-endif()
-
+# Source files
 set(TEST_SOURCES
     test/unit/test_core.cpp
     src/core.cpp
@@ -53,61 +43,9 @@ set(TEST_SOURCES
     src/data.cpp
 )
 
-# Add an executable for the tests
-add_executable(tests ${TEST_SOURCES})
-
-# Specify the directories where the compiler can find headers
-if (APPLE)
-    target_include_directories(tests PRIVATE
-        /opt/homebrew/opt/faiss/include
-        /opt/homebrew/opt/libomp/include
-        ${CURL_INCLUDE_DIR}
-        /opt/homebrew/opt/cpr/include
-        ${RAPIDJSON_INCLUDE_DIR}
-    )
-    link_directories(
-        /opt/homebrew/opt/faiss/lib
-        /opt/homebrew/opt/libomp/lib
-        /opt/homebrew/opt/cpr/lib
-    )
-else()
-    target_include_directories(tests PRIVATE
-        /home/linuxbrew/.linuxbrew/opt/faiss/include
-        /home/linuxbrew/.linuxbrew/opt/libomp/include
-        ${CURL_INCLUDE_DIR}
-        /home/linuxbrew/.linuxbrew/opt/cpr/include
-        ${RAPIDJSON_INCLUDE_DIR}
-    )
-    link_directories(
-        /home/linuxbrew/.linuxbrew/opt/faiss/lib
-        /home/linuxbrew/.linuxbrew/opt/libomp/lib
-        /home/linuxbrew/.linuxbrew/opt/cpr/lib
-    )
-endif()
-
-# Link libraries to your executable target
-if (APPLE)
-    target_link_libraries(tests PRIVATE
-        Catch2::Catch2WithMain
-        /opt/homebrew/opt/faiss/lib/libfaiss.dylib
-        /opt/homebrew/opt/libomp/lib/libomp.dylib
-        ${CURL_LIBRARY}
-        /opt/homebrew/opt/cpr/lib/libcpr.dylib
-    )
-else()
-    target_link_libraries(tests PRIVATE
-        Catch2::Catch2WithMain
-        /home/linuxbrew/.linuxbrew/opt/faiss/lib/libfaiss.so
-        /home/linuxbrew/.linuxbrew/opt/libomp/lib/libomp.so
-        ${CURL_LIBRARY}
-        /home/linuxbrew/.linuxbrew/opt/cpr/lib/libcpr.so
-    )
-endif()
-
-# Define source files for the new executable that uses Asio
 set(PERIPLUS_SOURCES
     src/driver.cpp
-    src/server.cpp  # Replace with your actual file that uses Asio
+    src/server.cpp
     src/session.cpp
     src/cache.cpp
     src/core.cpp
@@ -116,68 +54,43 @@ set(PERIPLUS_SOURCES
     src/data.cpp
 )
 
-# Add another executable that will use Asio
-add_executable(periplus ${PERIPLUS_SOURCES})
+# Add an executable for the tests
+add_executable(tests ${TEST_SOURCES})
+target_include_directories(tests PRIVATE
+    ${FAISS_INCLUDE_DIR}
+    ${LIBOMP_INCLUDE_DIR}
+    ${CURL_INCLUDE_DIR}
+    ${CPR_INCLUDE_DIR}
+    ${RAPIDJSON_INCLUDE_DIR}
+    ${ASIO_INCLUDE_DIR}
+)
+target_link_libraries(tests PRIVATE
+    ${FAISS_LIBRARY}
+    ${LIBOMP_LIBRARY}
+    ${CURL_LIBRARY}
+    ${CPR_LIBRARY}
+    Catch2::Catch2WithMain
+)
 
-# Specify the directories where the compiler can find headers for the Asio app
-if (APPLE)
-    target_include_directories(periplus PRIVATE
-        /opt/homebrew/opt/faiss/include
-        /opt/homebrew/opt/libomp/include
-        /opt/homebrew/opt/asio/include
-        ${CURL_INCLUDE_DIR}
-        /opt/homebrew/opt/cpr/include
-        ${RAPIDJSON_INCLUDE_DIR}
-    )
-    link_directories(
-        /opt/homebrew/opt/faiss/lib
-        /opt/homebrew/opt/libomp/lib
-        /opt/homebrew/opt/cpr/lib
-    )
-else()
-    target_include_directories(periplus PRIVATE
-        /home/linuxbrew/.linuxbrew/opt/faiss/include
-        /home/linuxbrew/.linuxbrew/opt/libomp/include
-        /home/linuxbrew/.linuxbrew/opt/asio/include
-        ${CURL_INCLUDE_DIR}
-        /home/linuxbrew/.linuxbrew/opt/cpr/include
-        ${RAPIDJSON_INCLUDE_DIR}
-    )
-    link_directories(
-        /home/linuxbrew/.linuxbrew/opt/faiss/lib
-        /home/linuxbrew/.linuxbrew/opt/libomp/lib
-        /home/linuxbrew/.linuxbrew/opt/cpr/lib
-    )
-endif()
+# Add an executable for Periplus
+add_executable(periplus ${PERIPLUS_SOURCES})
+target_include_directories(periplus PRIVATE
+    ${FAISS_INCLUDE_DIR}
+    ${LIBOMP_INCLUDE_DIR}
+    ${CURL_INCLUDE_DIR}
+    ${CPR_INCLUDE_DIR}
+    ${RAPIDJSON_INCLUDE_DIR}
+    ${ASIO_INCLUDE_DIR}
+)
+target_link_libraries(periplus PRIVATE
+    ${FAISS_LIBRARY}
+    ${LIBOMP_LIBRARY}
+    ${CURL_LIBRARY}
+    ${CPR_LIBRARY}
+)
 
 # Add AddressSanitizer flags for periplus
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(periplus PRIVATE -fsanitize=address -fno-omit-frame-pointer -g)
     target_link_options(periplus PRIVATE -fsanitize=address)
-endif()
-
-# Apply floating-point flags specifically to the periplus target
-# if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-#     target_compile_options(periplus PRIVATE
-#         -ffloat-store
-#         -frounding-math
-#         -mfpmath=sse
-#     )
-# endif()
-
-# Link libraries to the new executable
-if (APPLE)
-    target_link_libraries(periplus PRIVATE
-        /opt/homebrew/opt/faiss/lib/libfaiss.dylib
-        /opt/homebrew/opt/libomp/lib/libomp.dylib
-        ${CURL_LIBRARY}
-        /opt/homebrew/opt/cpr/lib/libcpr.dylib
-    )
-else()
-    target_link_libraries(periplus PRIVATE
-        /home/linuxbrew/.linuxbrew/opt/faiss/lib/libfaiss.so
-        /home/linuxbrew/.linuxbrew/opt/libomp/lib/libomp.so
-        ${CURL_LIBRARY}
-        /home/linuxbrew/.linuxbrew/opt/cpr/lib/libcpr.so
-    )
 endif()
