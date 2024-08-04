@@ -6,6 +6,7 @@ RUN brew install \
     cmake \
     catch2 \
     asio \
+    curl \
     cpr \
     rapidjson \
     faiss \
