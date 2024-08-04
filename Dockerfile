@@ -25,7 +25,7 @@ ENV CMAKE_LIBRARY_PATH=/home/linuxbrew/.linuxbrew/lib
 
 # Build the project
 RUN cmake -S . -B build \
-    && cmake --build build
+    && cmake --build build --target periplus
 
 # Default command
 CMD ["./build/periplus", "-p", "3000"]

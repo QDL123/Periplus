@@ -118,9 +118,7 @@ jobs:
 
       - name: Build the project
         run: |
-          cd build
-          cmake ..
-          make
+          cmake --build build --target tests
 
       - name: Run Catch2 tests
         run: |
