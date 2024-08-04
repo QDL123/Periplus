@@ -111,7 +111,7 @@ jobs:
       - name: Install dependencies
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew install faiss cpr rapidjson libomp catch2 cmake
+          brew install faiss curl cpr rapidjson libomp catch2 cmake
 
       - name: Create build directory
         run: mkdir -p build
