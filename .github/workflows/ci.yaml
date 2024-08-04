@@ -113,8 +113,8 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew install faiss curl cpr rapidjson libomp catch2 cmake
 
-      - name: Create build directory
-        run: mkdir -p build
+      - name: Create build system
+        run: cmake -S . -B build
 
       - name: Build the project
         run: |
