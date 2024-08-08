@@ -31,9 +31,8 @@ public:
     void do_write(std::size_t length);
     void sync_write(std::size_t length);
 
-    std::vector<char> buffer;
     enum { max_length = 1024 };
-    char data_[max_length];
+    char output_buf[max_length];
     std::shared_ptr<Args> args;
     Cache *cache;
 
@@ -41,7 +40,7 @@ public:
 
 private:
     asio::ip::tcp::socket socket_;
-    asio::streambuf data_stream_;
+    asio::streambuf input_stream;
     void do_read();
 };
 

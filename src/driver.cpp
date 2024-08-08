@@ -13,9 +13,9 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             help = true;
         } else if (strcmp(argv[i], "-p") == 0) {
-            if (i + 1 < argc) {  // Make sure we aren't at the end of argv!
-                port = static_cast<short>(std::stoi(argv[++i]));  // Increment 'i' so we don't get the argument as the next argv[i].
-            } else {  // Uh-oh, there was no argument to the filename option.
+            if (i + 1 < argc) {
+                port = static_cast<short>(std::stoi(argv[++i]));
+            } else {
                 std::cerr << "-p option requires one argument." << std::endl;
                 return 1;
             }
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Server starting up on port: " << port << std::endl;
 
         std::vector<std::thread> threads;
-        // TODO: Add multithreading
+        // TODO: Enable multithreading (requires synchronization)
         for(int i = 0; i < 1 /* std::thread::hardware_concurrency()*/; ++i) {
             threads.emplace_back([&io_context](){
                 io_context.run();

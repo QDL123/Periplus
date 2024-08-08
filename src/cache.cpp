@@ -14,7 +14,7 @@ Cache::Cache() : status(UNINITIALIZED), core(nullptr) {}
 void Cache::processCommand(std::shared_ptr<Session> session, std::string command) {
     // Determine the whether we can process the command
     std::string output("Unable to process command: " + command);
-    std::cout << "Received command: " << command << " with status: " << this->status << std::endl;
+    std::cout << "Received command: " << command << '\n';
     switch (this->status) {
         case READY:
             if (command == std::string("SEARCH")) {
@@ -55,12 +55,9 @@ void Cache::processCommand(std::shared_ptr<Session> session, std::string command
                 break;
             }
         default:
-            std::cout << "Cache status: " << this->status << std::endl;
-            throw std::runtime_error(std::string("Cache status is undefined"));
+            std::cout << "Could not process command: " << command << " with cache status: " << this->status << std::endl;
+            throw std::runtime_error(std::string("Invalid command"));
     }
-    
-    // Send back update that the command is being processed
-    output.copy(session->data_, 1024);
 }
 
 
@@ -108,7 +105,7 @@ void Cache::initialize(std::shared_ptr<Session> session) {
     this->core = std::make_unique<Core>(args->d, db_client, nCells, args->nTotal, args->use_flat);
 
     std::string output("Initialized cache");
-    output.copy(session->data_, 1024);
+    output.copy(session->output_buf, 1024);
 
     session->do_write(output.size());
 
@@ -117,8 +114,6 @@ void Cache::initialize(std::shared_ptr<Session> session) {
     std::cout << "Listening for more commands" << std::endl;
     // Listen for more commands
     session->read_command();
-
-    // Last reference should args should go out of scope, causing it to destruct
 }
 
 void Cache::train(std::shared_ptr<Session> session) {
@@ -131,7 +126,7 @@ void Cache::train(std::shared_ptr<Session> session) {
     this->status = READY;
 
     std::string output("Trained cache");
-    output.copy(session->data_, 1024);
+    output.copy(session->output_buf, 1024);
 
     session->do_write(output.size());
 
@@ -144,7 +139,7 @@ void Cache::load(std::shared_ptr<Session> session) {
     this->core->loadCellWithVec(args->xq, args->nload);
     
     std::string output("Loaded cell");
-    output.copy(session->data_, 1024);
+    output.copy(session->output_buf, 1024);
     session->do_write(output.size());
 
     // Listen for more commands
@@ -165,10 +160,10 @@ void Cache::search(std::shared_ptr<Session> session) {
             std::cout << ", ";
         }
     }
-    std::cout << std::endl;
+    std::cout << '\n';
 
     for (size_t i = 0; i < args->n; i++) {
-        std::memcpy(session->data_, &cacheHits[i], sizeof(int));
+        std::memcpy(session->output_buf, &cacheHits[i], sizeof(int));
         session->sync_write(sizeof(int));
         for (int j = 0; cacheHits[i] > -1 && j < cacheHits[i]; j++) {
             std::vector<char> bytes;
@@ -176,11 +171,11 @@ void Cache::search(std::shared_ptr<Session> session) {
             size_t l = 0;
 
             for (; bytes.size() >= Session::max_length && l < bytes.size() - Session::max_length; l += Session::max_length) {
-                std::memcpy(session->data_, &bytes.data()[l], Session::max_length);
+                std::memcpy(session->output_buf, &bytes.data()[l], Session::max_length);
                 session->sync_write(Session::max_length);
             }
 
-            std::memcpy(session->data_, &bytes.data()[l], bytes.size() - l);
+            std::memcpy(session->output_buf, &bytes.data()[l], bytes.size() - l);
             session->sync_write(bytes.size() - l);
         }
     }
@@ -193,7 +188,7 @@ void Cache::evict(std::shared_ptr<Session> session) {
     this->core->evictCellWithVec(args->xq, args->nevict);
     
     std::string output("Evicted cell");
-    output.copy(session->data_, 1024);
+    output.copy(session->output_buf, 1024);
     session->do_write(output.size());
 
     // Listen for more commands
@@ -205,7 +200,7 @@ void Cache::add(std::shared_ptr<Session> session) {
     this->core->add(args->num_docs, args->ids, args->embeddings);
 
     std::string output("Added vectors");
-    output.copy(session->data_, 1024);
+    output.copy(session->output_buf, 1024);
     session->do_write(output.size());
     session->read_command();
 }
