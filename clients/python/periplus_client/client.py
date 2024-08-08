@@ -12,7 +12,6 @@ class CacheClient:
         return command + "\r\n" + static_args.decode('latin1') + "\n" + dynamic_args.decode('latin1') + "\r\n"
 
 
-
     async def initialize(self, d, db_url, options={}):
         if not self.conn.connected:
             await self.conn.connect()
@@ -103,9 +102,6 @@ class CacheClient:
         static_args = struct.pack(fmt, len(ids), num_bytes)
         static_message = command + "\r\n" + static_args.decode('latin1') + "\n"
         await self.conn.send(static_message)
-
-        # Serialize the integer-string pairs
-        # dynamic_data = b""  # Initialize as bytes object
 
         print("Sending id data")
         # Send the ids
@@ -201,7 +197,7 @@ class CacheClient:
 
     async def deserialize_document(self):
         """ Deserialize structured query results from an already connected TCP socket and return as a namedtuple. """
-        # try:
+        # TODO: implement error handling
         # Read first length (8-byte unsigned integer) for ID string
         data = await self.conn.receive(8)
         id_length = struct.unpack('Q', data)[0]
@@ -224,11 +220,6 @@ class CacheClient:
 
         # Return the received data as a namedtuple
         return Document(id=id_str, embedding=embedding, document=document, metadata=metadata)
-        
-        # TODO: error handling
-        # except socket.error as e:
-        #     # Handle potential socket errors
-        #     print(f"Socket error: {e}")
 
 
     async def deserialize_query_results(self, num_queries):

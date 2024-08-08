@@ -10,14 +10,6 @@ COPY . .
 # Change directory to test/e2e
 WORKDIR /app/test/e2e
 
-# Create a Python virtual environment named e2e_test_env
-# RUN python -m venv e2e_test_env
-
-# # Activate the virtual environment and install dependencies
-# RUN pip install --upgrade pip
-
-# RUN . e2e_test_env/bin/activate
-
 RUN pip install -r proxy_requirements.txt
 
 # Expose port 8000
