@@ -25,8 +25,6 @@ void TcpServer::do_accept() {
                 auto session = std::make_shared<Session>(std::move(socket), this->cache.get());
                 this->sessions.push_back(session);
                 session->start();
-                // TODO: track sessions here and start timers for closing them if not used
-                // How should session lifetimes be managed.
             }
 
             // Listen for more connections

@@ -19,14 +19,12 @@ struct Core {
     size_t d = 0;
     size_t nCells = 0;
     std::unique_ptr<float[]> centroids;
-    std::unique_ptr<float[]> residenceStatuses;
+    std::unique_ptr<float[]> residence_statuses;
     std::shared_ptr<faiss::IndexFlat> quantizer;
     std::unique_ptr<faiss::IndexIVF> index;
     std::shared_ptr<DBClient> db;    
 
-    // size of nx * d 
-    // std::vector< std::vector <float> > embeddings;
-    // TODO: look into other ways to generate ids;
+    // TODO: look into other ways to generate ids, this will cause problems when next_id overflows and there's id overlap
     faiss::idx_t next_id = 0;
     std::vector<std::vector<std::string>> ids_by_cell;
     std::vector<Data> data;
@@ -35,10 +33,8 @@ struct Core {
     
 
     Core(size_t d, std::shared_ptr<DBClient> db, size_t nCells, float nTotal, bool use_flat);
-    bool isNullTerminated(const char* str, size_t maxLength);
+    bool isNullTerminated(const char* str, size_t max_length);
 
-    // May not need this is we're training the 
-    // whole dataset at once. This may just be a wrapper
     void train(faiss::idx_t n, const float* x);
 
     void loadCellWithVec(std::shared_ptr<float[]> xq, size_t nload);

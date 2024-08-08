@@ -26,15 +26,6 @@ DBClient::DBClient(size_t d, std::shared_ptr<char[]> db_url) {
 
 DBClient::~DBClient() {}
 
-// Function to construct the query string for the array of floats
-std::string constructFloatArrayQuery(const float* array, size_t length) {
-    std::ostringstream oss;
-    for(size_t i = 0; i < length; ++i) {
-        oss << "&xq=";
-        oss << array[i];
-    }
-    return oss.str();
-}
 
 // Function to construct the JSON body from a vector of strings
 std::string constructJsonBody(const std::vector<std::string>& ids) {
@@ -57,48 +48,6 @@ std::string constructJsonBody(const std::vector<std::string>& ids) {
 }
 
 
-// Function to check if a string is null-terminated within a given length
-bool isNullTerminated(const char* str, size_t maxLength) {
-    for (size_t i = 0; i < maxLength; ++i) {
-        if (str[i] == '\0') {
-            return true;  // Found null terminator within the maxLength
-        }
-    }
-    return false;  // No null terminator found within the maxLength
-}
-
-void debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr) {
-    const char *type_str = "";
-    switch (type) {
-        case CURLINFO_TEXT:
-            type_str = "TEXT";
-            break;
-        case CURLINFO_HEADER_IN:
-            type_str = "HEADER_IN";
-            break;
-        case CURLINFO_HEADER_OUT:
-            type_str = "HEADER_OUT";
-            break;
-        case CURLINFO_DATA_IN:
-            type_str = "DATA_IN";
-            break;
-        case CURLINFO_DATA_OUT:
-            type_str = "DATA_OUT";
-            break;
-        case CURLINFO_SSL_DATA_IN:
-            type_str = "SSL_DATA_IN";
-            break;
-        case CURLINFO_SSL_DATA_OUT:
-            type_str = "SSL_DATA_OUT";
-            break;
-        case CURLINFO_END:
-            type_str = "END";
-            break;
-    }
-    std::cerr << "DEBUG [" << type_str << "]: " << std::string(data, size) << std::endl;
-}
-
-
 void DBClient::search(std::vector<std::string> ids, Data *x) {
 
     // Get the url
@@ -115,16 +64,13 @@ void DBClient::search(std::vector<std::string> ids, Data *x) {
     this->session.SetHeader(cpr::Header{{"Content-Type", "application/json"}});
     this->session.SetBody(cpr::Body{jsonBody});
     auto response = this->session.Post();
-    // auto response = cpr::Post(
-    //     cpr::Url{url},
-    //     cpr::Header{{"Content-Type", "application/json"}},
-    //     cpr::Body{jsonBody}
-    // );
 
     if (response.status_code != 200) {
         std::cerr << "Request response status: " << response.status_code << "\n";
         std::cerr << "response.text: " << response.text << std::endl;
         std::cerr << "Request failed. Error: " << response.error.message << std::endl;
+
+        // TODO: handle this gracefully
         throw;
     } else {
         rapidjson::Document document;
@@ -178,8 +124,10 @@ void DBClient::search(std::vector<std::string> ids, Data *x) {
 }
 
 
+////////////////////////////////////////////////////////
+// MOCK DB Client Implementation (Unit Testing Purposes)
+////////////////////////////////////////////////////////
 
-// MOCK DB Client Implementation //////
 DBClient_Mock::DBClient_Mock(size_t d) : DBClient(d, std::shared_ptr<char[]>(nullptr)) {
     this->data_map = std::unordered_map<std::string, Data>();
 }
@@ -190,16 +138,11 @@ void DBClient_Mock::loadDB(faiss::idx_t n, Data *data) {
         Data data_entry = data[i];
         this->data_map.insert({id, data_entry});
     }
-
     this->size = n;
 }
 
 void DBClient_Mock::search(std::vector<std::string> ids, Data *x) {
-    std::cout << "Called mock of new search function" << std::endl;
-
     for (size_t i = 0; i < ids.size(); i++) {
-        // This is gotta be a throwing the reference count
-        // std::memcpy(&x[i], &this->data_map[ids[i]], sizeof(Data));
         new(&x[i]) Data(this->data_map[ids[i]]);
     }
 }
