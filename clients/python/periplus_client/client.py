@@ -235,13 +235,13 @@ class CacheClient:
         return results
     
 
-    async def search(self, k, query_vectors, options={}):
-        # TODO: Check that query_vectors is a list of lists of size d
+    async def search(self, k, xq, options={}):
+        # TODO: Check that xq is a list of lists of size d
         if not self.conn.connected:
             await self.conn.connect()
 
         command = "SEARCH"
-        n = len(query_vectors)
+        n = len(xq)
 
         # Parse options
         nprobe = 1
@@ -252,7 +252,7 @@ class CacheClient:
         if 'require_all' in options:
             require_all = options['require_all']
 
-        float_list = [item for sublist in query_vectors for item in sublist]
+        float_list = [item for sublist in xq for item in sublist]
         num_bytes = len(float_list) * 4
 
         fmt = "<QQQ?Q"
@@ -262,7 +262,7 @@ class CacheClient:
 
         await self.conn.send(message)
 
-        res = await self.deserialize_query_results(len(query_vectors))
+        res = await self.deserialize_query_results(len(xq))
 
         await self.conn.close()
         return res
