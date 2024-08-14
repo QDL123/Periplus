@@ -1,4 +1,4 @@
 # __init__.py
-from .client import CacheClient
+from .client import Periplus
 
-__all__ = ['CacheClient']
+__all__ = ['Periplus']

@@ -5,7 +5,7 @@ import faiss
 import math
 import time
 import numpy as np
-from periplus_client import CacheClient
+from periplus_client import Periplus
 
 
 def generate_ids(num_ids):
@@ -44,6 +44,7 @@ async def main():
     print("generating ids")
     ids = generate_ids(num_docs)
     url = "http://proxy:8000/api/v1/load_data"
+    # url = "http://localhost:8000/api/v1/load_data"
     d = 128
     numCells = int(4 * math.sqrt(num_docs))
     print("generating embeddings")
@@ -63,11 +64,10 @@ async def main():
     
     index.add(np.vstack(embeddings))
 
-    print("HELLLLO")
-
 
     # Initialize the cache
-    client = CacheClient("periplus", 3000)
+    client = Periplus("periplus", 3000)
+    # client = Periplus("localhost", 3000)
 
     print("initializing cache")
     await client.initialize(d=d, db_url=url, options={"nTotal":num_docs, "use_flat": True})
