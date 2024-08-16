@@ -11,7 +11,7 @@ Periplus is currently in alpha and is not production-ready. The project is under
 Periplus is an open-source in-memory vector database cache built on Meta's vector similarity search library [FAISS](https://github.com/facebookresearch/faiss). The project can best be thought of as "Redis for vector databases". It's designed to store a dynamically updated subset of a large vector collection entirely in memory while serving queries without interacting with any other nodes at query time. When Periplus receives a query, it first assesses whether it has the releveant part of the index in-residence. If it does, it resolves the query with the appropriate response. If it doesn't, it returns a cache miss and leaves the querier to fetch the data from the database. Periplus is not designed to function in isolation. Instead, it is meant to form a modular and flexible caching layer for a separate vector database which forms the persistance layer. The purpose of this is to enable lower latency and easy horizontal scaling for increasing throughput. For a more detailed description of the inspiration behind Periplus and how it works you can read the announcement blog: [Introducing Periplus: A New Approach to Vector Database Caching](https://medium.com/@quintindleary/ed8fa7a0f234).
 
 ## How It Works
-Periplus uses an inverted file index (IVF) as the basis for cache management. Inverted file indexes partition the vector space into contiguous cells defined by a set of centroid vectors where each cell is defined as the region which is closer to it's centroid than to any other centroid. Queries are then resolved by first computing the distances from the query vector to the set of centroids and then searching only the cells defined by the **nprobe** (search hyperparameter) closest centroids. Periplus takes advantage of this by keeping a subset of these cells in residence at any given time and only resolving queries which are relevant to that subset while rejecting the ones that aren't as cache misses. Periplus loads and evicts entire IVF cells at a time to maintain the integrity of the index and ensure equivalent recall (on cache hits) to a standard IVF index. IVF cells are loaded by querying the vector database via a proxy with a list of ids of vectors which Periplus maintains to track which vectors occupy which cells. These operations can be invoked by the user using **LOAD**, **SEARCH**, and **EVICT** commands. For details, see the [Periplus Commands](README.md#periplus-commands) section below.
+Periplus uses an inverted file index (IVF) as the basis for cache management. Inverted file indexes partition the vector space into contiguous cells defined by a set of centroid vectors where each cell is defined as the region which is closer to it's centroid than to any other centroid. Queries are then resolved by first computing the distances from the query vector to the set of centroids and then searching only the cells defined by the **n_probe** (search hyperparameter) closest centroids. Periplus takes advantage of this by keeping a subset of these cells in residence at any given time and only resolving queries which are relevant to that subset while rejecting the ones that aren't as cache misses. Periplus loads and evicts entire IVF cells at a time to maintain the integrity of the index and ensure equivalent recall (on cache hits) to a standard IVF index. IVF cells are loaded by querying the vector database via a proxy with a list of ids of vectors which Periplus maintains to track which vectors occupy which cells. These operations can be invoked by the user using **LOAD**, **SEARCH**, and **EVICT** commands. For details, see the [Periplus Commands](README.md#periplus-commands) section below.
 
 
 ## Running Periplus
@@ -64,10 +64,7 @@ Headers:
 Body:
 ```JSON
 {
-    "ids": [
-        "<String>",
-        ...
-    ]
+    "ids": ["id-1", "id-2", "id-3"]
 }
 ```
 
@@ -76,12 +73,11 @@ Response:
 {
     "results": [
         {
-            "id": "<String>",
-            "embedding": ["<Floating Point Number>", ...],
-            "document": "<String>",
-            "metdata": "<String>"
-        },
-        ...
+            "id": "String",
+            "embedding": [0.1, 0.2, 0.3], // Floating point numbers
+            "document": "String",
+            "metdata": "String"
+        }
     ]
 }
 ```
@@ -102,9 +98,9 @@ To interact with your Periplus instance, use the Periplus client library. Curren
 1. **INITIALIZE**: This is the setup command for Periplus. It must be called before any other command and any subsequent **INITIALIZE** calls will wipe all the data and reset the Periplus instance. There are 2 required arguments: d (dimensionality of the vector collection), and db_url (url of the database proxy endpoint used to load data). There is also an optional options object argument with 2 available options: **nTotal** and **use_flat**. The first, **nTotal**, is an estimate of the total number of vectors in the collection. This is used to optimize the number of IVF cells to use. If not specified, Periplus will pick a middle ground which can lead to suboptimal performance. The second, **use_flat**, is a boolean which instructs Periplus to use a flat index instead of applying any product quantization (PQ). By default this value is false, in which case product quantization will be applied if the vectors are large enough and easily divisible into subvectors. If set to true, a flat IVF index will be used instead.
 2. **TRAIN**: This command sets the position of the centroids in the IVF index that forms the basis of the cache. Once the centroid positions are set they cannot be reset without completely wiping the cache. It takes a list of vector embeddings as an argument which should be a representative sample of your vector collection. It's recommended to use up to 10% of your total collection, but less is okay for really large datasets where 10% will overwhelm the Periplus instance.
 3. **ADD**: This command makes Periplus aware of the data without actually populating the cache, so that it can later be loaded from the database. Any vector that Periplus should be able to load first needs to be registered via the ADD command. The command takes two arguments ids and embeddings which are lists of equal lengths with vector ids and corresponding vector embedding.
-4. **LOAD**: This command instructs Periplus to load IVF cell(s) (see [How it works](README.md#how-it-works) for details) from the database. It has one required argument, a vector telling it what cells to target, and an optional options object with one available option  **nLoad** which tells it how many cells to load. Periplus will load the nearest nLoad cells to the vector from the database (nLoad defaults to 1 if not specified). This guarantees that a subsequent **SEARCH** command with the same vector will yield a cache hit (assuming the cell has not been evicted beforehand and the nLoad argument matches the nProbe argument given in the search).
-5. **SEARCH**: This command runs a set of queries against the data stored in Periplus. It takes 2 required arguments: **k** which specifies the number of nearest neighbors to return, and **xq** which is a list of query vectors. It optionally takes an options object with two available options: **nprobe** and **require_all**. The first specifies how many IVF cells to search. Larger values result in increased latency but also increased recall (and a lower cache hit rate when **require_all** is used). The default value is 1 if unspecified. The second option **require_all** is a boolean that dictates the cache hit/miss behavior. If set to true, all **nprobe** nearest cells must be in-residence for the query to be a cache hit. If false, only the nearest IVF cell must be in-residence for the query to be a cache hit, and Periplus will search which ever IVF cells are in-residence up to the **nprobe** closest IVF cell. The default value is true. The **SEARCH** command returns a list of lists of Document tuples where each list corresponds to the k results for the corresponding query vector provided at that index. Cache misses will have a list of length 0. In rare cases, if the length is > 0 and <  k that indicates that the total number of vectors in the nearest **nprobe** cells is < k. Each Document tuple has 4 fields: id, embedding, metadata, and document which will correspond the values provided by the database proxy when the data was loaded.
-6. **EVICT**: This command works exactly the same as **LOAD** except it evicts IVF cell(s) if they are present from Periplus instead of loading them. It has one required arugment, a vector telling it what cells to target, and an optional options object with one available option **nEvict** whch tells it how many cells to evict. Periplus will evict the cells corresponding to the nearest **nEvict** centroids to the vector from Periplus (nEvict defaults to 1 it not specified). 
+4. **LOAD**: This command instructs Periplus to load IVF cell(s) (see [How it works](README.md#how-it-works) for details) from the database. It has one required argument, a vector telling it what cells to target, and an optional options object with one available option  **n_load** which tells it how many cells to load. Periplus will load the nearest n_load cells to the vector from the database (n_load defaults to 1 if not specified). This guarantees that a subsequent **SEARCH** command with the same vector will yield a cache hit (assuming the cell has not been evicted beforehand and the n_load argument matches the n_probe argument given in the search).
+5. **SEARCH**: This command runs a set of queries against the data stored in Periplus. It takes 2 required arguments: **k** which specifies the number of nearest neighbors to return, and **xq** which is a list of query vectors. It optionally takes an options object with two available options: **n_probe** and **require_all**. The first specifies how many IVF cells to search. Larger values result in increased latency but also increased recall (and a lower cache hit rate when **require_all** is used). The default value is 1 if unspecified. The second option **require_all** is a boolean that dictates the cache hit/miss behavior. If set to true, all **n_probe** nearest cells must be in-residence for the query to be a cache hit. If false, only the nearest IVF cell must be in-residence for the query to be a cache hit, and Periplus will search which ever IVF cells are in-residence up to the **n_probe** closest IVF cell. The default value is true. The **SEARCH** command returns a list of lists of Document tuples where each list corresponds to the k results for the corresponding query vector provided at that index. Cache misses will have a list of length 0. In rare cases, if the length is > 0 and <  k that indicates that the total number of vectors in the nearest **n_probe** cells is < k. Each Document tuple has 4 fields: id, embedding, metadata, and document which will correspond the values provided by the database proxy when the data was loaded.
+6. **EVICT**: This command works exactly the same as **LOAD** except it evicts IVF cell(s) if they are present from Periplus instead of loading them. It has one required arugment, a vector telling it what cells to target, and an optional options object with one available option **n_evict** whch tells it how many cells to evict. Periplus will evict the cells corresponding to the nearest **n_evict** centroids to the vector from Periplus (n_evict defaults to 1 it not specified). 
 
 #### Example
 ```python
@@ -123,7 +119,7 @@ ids = ["0", ..., "n"]
 embeddings = [[0.43456, ..., 0.38759], ...]
 await client.add(ids=ids, embeddings=embeddings)
 
-load_options = { "nLoad": 2 }
+load_options = { "n_load": 2 }
 # query_vector, optional: options object
 await client.load([embeddings[0]] load_options)
 
@@ -135,9 +131,9 @@ print(response)
     [ // K nearest neighbors to this corresponding index in the xq list
         (
             id="n",
-            embedding=[0.43456, ..., 0.38759]
-            metadata={},
-            document=""
+            embedding=[0.43456, ..., 0.38759],
+            document="",
+            metadata="{}"
         ),
         ...
     ],

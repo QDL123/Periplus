@@ -37,7 +37,7 @@ class Periplus:
         
         options (dict, optional): A dictionary containing additional optional configuration
         settings. Heres a description of each of those options:
-            - nTotal (int): This is an estimate of the total number of vectors in the collection.
+            - n_records (int): This is an estimate of the total number of vectors in the collection.
             It's not meant to be precise, but rather to provide the order of magnitude of the
             collection in order to better optimize the number of IVF cells which cannot be changed later
             without wiping the whole instance. Not providing this option will cause Periplus to guess
@@ -62,16 +62,16 @@ class Periplus:
         if 'max_mem' in options:
             max_mem = options['max_mem']
 
-        nTotal = 250000
-        if 'nTotal' in options:
-            nTotal = options['nTotal']
+        n_records = 250000
+        if 'n_records' in options:
+            n_records = options['n_records']
 
         use_flat = False
         if 'use_flat' in options:
             use_flat = options['use_flat']
 
         fmt = '<QQQ?Q'
-        static_args = struct.pack(fmt, d, max_mem, nTotal, use_flat, len(db_url))
+        static_args = struct.pack(fmt, d, max_mem, n_records, use_flat, len(db_url))
         dynamic_args = db_url.encode('latin1')
         message = Periplus._format_command(command, static_args, dynamic_args)
 
@@ -232,7 +232,7 @@ class Periplus:
 
         options (dict, optional): A dictionary containing additional optional settings.
         Heres a description of each of those options:
-            - nLoad (int): This specifies how many IVF cells to load. The cells with the nLoad
+            - n_load (int): This specifies how many IVF cells to load. The cells with the n_load
             nearest centroids will be loaded from the database. The default is 1 if not specified.
 
         Returns:
@@ -246,12 +246,12 @@ class Periplus:
         command = "LOAD"
         num_bytes = len(xq) * 4
 
-        nload = 1
-        if 'nLoad' in options:
-            nload = options['nLoad']
+        n_load = 1
+        if 'n_load' in options:
+            n_load = options['n_load']
         
         fmt = "<QQ"
-        static_args = struct.pack(fmt, nload, num_bytes)
+        static_args = struct.pack(fmt, n_load, num_bytes)
         dynamic_args = struct.pack(f'<{len(xq)}f', *xq)
         assert num_bytes == len(dynamic_args)
         message = Periplus._format_command(command, static_args, dynamic_args)
@@ -348,11 +348,11 @@ class Periplus:
 
         options (dict, optional): A dictionary containing additional optional search settings.
         Heres a description of each of those options:
-            - nprobe (int): This specifies how many IVF cells to search for nearest neighbors.
-            - require_all (bool): This boolean determines whether the IVF cells defined by the nprobe nearest centroids
+            - n_probe (int): This specifies how many IVF cells to search for nearest neighbors.
+            - require_all (bool): This boolean determines whether the IVF cells defined by the n_probe nearest centroids
             all need to be in-residence for the query to be a cache hit. If it's true then any relevant cells not being in-residence
             will result in nothing being returned. If it's false, then so long as the IVF cell defined by the nearest centroid is
-            in-residence then the query will be a cache hit and the subset of the IVF cells defined by the nprobe nearest
+            in-residence then the query will be a cache hit and the subset of the IVF cells defined by the n_probe nearest
             centroids to the query vector will be searched. This means the total number of cells searched will be >= 1 and <= k. By
             default, require_all is true.
 
@@ -369,9 +369,9 @@ class Periplus:
         n = len(xq)
 
         # Parse options
-        nprobe = 1
-        if 'nprobe' in options:
-            nprobe = options['nprobe']
+        n_probe = 1
+        if 'n_probe' in options:
+            n_probe = options['n_probe']
 
         require_all = True
         if 'require_all' in options:
@@ -381,7 +381,7 @@ class Periplus:
         num_bytes = len(float_list) * 4
 
         fmt = "<QQQ?Q"
-        static_args = struct.pack(fmt, n, k, nprobe, require_all, num_bytes)
+        static_args = struct.pack(fmt, n, k, n_probe, require_all, num_bytes)
         dynamic_args = struct.pack(f'<{len(float_list)}f', *float_list)
         message = Periplus._format_command(command, static_args, dynamic_args)
 
@@ -403,7 +403,7 @@ class Periplus:
 
         options (dict, optional): A dictionary containing additional optional settings.
         Heres a description of each of those options:
-            - nEvict (int): This specifies how many IVF cells to evict. The cells defined by the nEvict
+            - n_evict (int): This specifies how many IVF cells to evict. The cells defined by the n_evict
             nearest centroids will be evicted from the database. The default is 1 if not specified.
 
         Returns:
@@ -417,12 +417,12 @@ class Periplus:
         command = "EVICT"
         num_bytes = len(vector) * 4
 
-        nevict = 1
-        if 'nEvict' in options:
-            nevict = options['nEvict']
+        n_evict = 1
+        if 'n_evict' in options:
+            n_evict = options['n_evict']
         
         fmt = "<QQ"
-        static_args = struct.pack(fmt, nevict, num_bytes)
+        static_args = struct.pack(fmt, n_evict, num_bytes)
         dynamic_args = struct.pack(f'<{len(vector)}f', *vector)
         message = Periplus._format_command(command, static_args, dynamic_args)
 

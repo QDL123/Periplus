@@ -94,19 +94,19 @@ The response will be a JSON object containing the fetched data:
 {
   "results": [
     {
-      "embedding": [...],
+      "embedding": [0.1, 0.2, 0.3],
       "document": "document",
       "id": "id1",
       "metadata": "{}"
     },
     {
-      "embedding": [...],
+      "embedding": [0.4, 0.5, 0.6],
       "document": "document",
       "id": "id2",
       "metadata": "{}"
     },
     {
-      "embedding": [...],
+      "embedding": [0.7, 0.8, 0.9],
       "document": "document",
       "id": "id3",
       "metadata": "{}"

@@ -16,7 +16,7 @@ This document provides a detailed API reference for the Periplus client library.
     - [`load`](#load)
     - [`search`](#search)
     - [`evict`](#evict)
-- [Document NamedTuple](#document-namedtuple)
+- [Record NamedTuple](#record-namedtuple)
 - [Error Classes](#error-classes)
     - [`PeriplusError`](#peripluserror)
     - [`PeriplusConnectionError`](#periplusconnectionerror)
@@ -64,7 +64,7 @@ async initialize(d: int, db_url: str, options: dict = {}) -> bool
   - `d` (*int*): Dimensionality of the vector collection (e.g. 128 if your vectors have 128 dimensions).
   - `db_url` (*str*): URL pointing to the endpoint implementing the Periplus database proxy specification.
   - `options` (*dict*, optional): Additional configuration settings.
-    - `nTotal` (*int*): Estimate of the total number of vectors in the collection. Helps optimize the number of IVF cells.
+    - `n_records` (*int*): Estimate of the total number of vectors in the collection. Helps optimize the number of IVF cells.
     - `use_flat` (*bool*): Determines whether to use product quantization (PQ). Defaults to `False`. If `False`, PQ is used for vectors with dimensions ≥ 64 and divisible into subvectors of 8.
 
 - **Returns**: 
@@ -80,7 +80,7 @@ async initialize(d: int, db_url: str, options: dict = {}) -> bool
       d=128,
       db_url='http://localhost:5000/proxy',
       options={
-          'nTotal': 500000,
+          'n_records': 500000,
           'use_flat': False
       }
   )
@@ -173,7 +173,7 @@ async load(xq: List[float], options: dict = {}) -> bool
 - **Parameters**:
   - `xq` (*List[float]*): A vector indicating which IVF cell(s) to load. The cells corresponding to the nearest centroids to `xq` will be loaded.
   - `options` (*dict*, optional): Additional loading options.
-    - `nLoad` (*int*): Number of IVF cells to load. Defaults to `1`.
+    - `n_load` (*int*): Number of IVF cells to load. Defaults to `1`.
 
 - **Returns**: 
   - (*bool*): `True` if the cells are loaded successfully.
@@ -186,7 +186,7 @@ async load(xq: List[float], options: dict = {}) -> bool
   ```python
   query_vector = [0.1, 0.2, 0.3, ..., 0.128]
   
-  success = await client.load(xq=query_vector, options={'nLoad': 3})
+  success = await client.load(xq=query_vector, options={'n_load': 3})
   if success:
       print("Cells loaded into Periplus successfully.")
   ```
@@ -196,7 +196,7 @@ async load(xq: List[float], options: dict = {}) -> bool
 #### `search`
 
 ```python
-async search(k: int, xq: List[List[float]], options: dict = {}) -> List[List[Document]]
+async search(k: int, xq: List[List[float]], options: dict = {}) -> List[List[Record]]
 ```
 
 - **Description**: 
@@ -206,11 +206,11 @@ async search(k: int, xq: List[List[float]], options: dict = {}) -> List[List[Doc
   - `k` (*int*): Number of nearest neighbors to return for each query vector.
   - `xq` (*List[List[float]]*): List of query vectors. Each inner list should have a length equal to `d` specified during initialization.
   - `options` (*dict*, optional): Additional search options.
-    - `nprobe` (*int*): Number of IVF cells to search for nearest neighbors. Defaults to `1`.
+    - `n_probe` (*int*): Number of IVF cells to search for nearest neighbors. Defaults to `1`.
     - `require_all` (*bool*): Determines if all relevant IVF cells must be loaded for a cache hit. Defaults to `True`.
 
 - **Returns**: 
-  - (*List[List[Document]]*): A list where each element corresponds to the results for a query vector. Each result is a list of `Document` namedtuples containing `id`, `embedding`, `document`, and `metadata`. If a query results in a cache miss, the corresponding list will be empty.
+  - (*List[List[Record]]*): A list where each element corresponds to the results for a query vector. Each result is a list of `Record` namedtuples containing `id`, `embedding`, `document`, and `metadata`. If a query results in a cache miss, the corresponding list will be empty.
 
 - **Raises**:
     - `PeriplusConnectionError`: If the connection to the Periplus service fails.
@@ -227,15 +227,15 @@ async search(k: int, xq: List[List[float]], options: dict = {}) -> List[List[Doc
         k=5,
         xq=query_vectors,
         options={
-            'nprobe': 2,
+            'n_probe': 2,
             'require_all': False
         }
     )
 
     for i, query_result in enumerate(results):
         print(f"Results for Query Vector {i+1}:")
-        for doc in query_result:
-            print(f"ID: {doc.id}, Document: {doc.document}, Metadata: {doc.metadata}")
+        for record in query_result:
+            print(f"ID: {record.id}, Record: {record.document}, Metadata: {record.metadata}")
 
 ---
 
@@ -250,7 +250,7 @@ async evict(vector: List[float], options: dict = {}) -> bool
 - **Parameters**:
   - `vector` (*List[float]*): A vector indicating which IVF cell(s) to evict. The cells corresponding to the nearest centroids to `vector` will be evicted.
   - `options` (*dict*, optional): Additional eviction options.
-    - `nEvict` (*int*): Number of IVF cells to evict. Defaults to `1`.
+    - `n_evict` (*int*): Number of IVF cells to evict. Defaults to `1`.
 
 - **Returns**: 
   - (*bool*): `True` if the cells are evicted successfully.
@@ -263,35 +263,35 @@ async evict(vector: List[float], options: dict = {}) -> bool
   ```python
   evict_vector = [0.1, 0.2, 0.3, ..., 0.128]
   
-  success = await client.evict(vector=evict_vector, options={'nEvict': 2})
+  success = await client.evict(vector=evict_vector, options={'n_evict': 2})
   if success:
       print("Cells evicted from Periplus successfully.")
   ```
 
 ---
 
-## Document NamedTuple
+## Record NamedTuple
 
 ```python
-Document = namedtuple('Document', ['id', 'embedding', 'document', 'metadata'])
+Record = namedtuple('Record', ['id', 'embedding', 'document', 'metadata'])
 ```
 
 - **Description**: 
-  Represents a document retrieved from the Periplus service.
+  Represents a record retrieved from the Periplus service.
 
 - **Attributes**:
-  - `id` (*str*): Unique identifier of the document.
+  - `id` (*str*): Unique identifier of the record.
   - `embedding` (*List[float]*): Vector representation of the document.
-  - `document` (*str*): Content of the document.
-  - `metadata` (*str*): Additional metadata associated with the document.
+  - `document` (*str*): Content of the original document.
+  - `metadata` (*str*): Additional metadata associated with the record.
 
 - **Example**:
   ```python
-  # Assuming 'doc' is an instance of Document
-  print(f"ID: {doc.id}")
-  print(f"Embedding: {doc.embedding}")
-  print(f"Document: {doc.document}")
-  print(f"Metadata: {doc.metadata}")
+  # Assuming 'record' is an instance of Record
+  print(f"ID: {record.id}")
+  print(f"Embedding: {record.embedding}")
+  print(f"Document: {record.document}")
+  print(f"Metadata: {record.metadata}")
   ```
 
 ---

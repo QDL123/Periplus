@@ -35,7 +35,7 @@ async def prepare_cache(client):
     d = 2
 
     print("Initializing")
-    await client.initialize(d=d, db_url=url, options={ "nTotal": 50000 })
+    await client.initialize(d=d, db_url=url, options={ "n_records": 50000 })
 
     print("Generating Training data")
     training_data = generate_training_data(d=d, num_embeddings=50000)

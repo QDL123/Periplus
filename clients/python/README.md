@@ -35,7 +35,7 @@ client = Periplus(host='localhost', port=8080)
 await client.initialize(
     d=128,
     db_url='http://localhost:5000/proxy',
-    options={'nTotal': 500000, 'use_flat': False}
+    options={'n_records': 500000, 'use_flat': False}
 )
 
 # Train the instance with sample data
