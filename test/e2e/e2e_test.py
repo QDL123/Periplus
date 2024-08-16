@@ -70,7 +70,7 @@ async def main():
     # client = Periplus("localhost", 3000)
 
     print("initializing cache")
-    await client.initialize(d=d, db_url=url, options={"nTotal":num_docs, "use_flat": True})
+    await client.initialize(d=d, db_url=url, options={"n_records":num_docs, "use_flat": True})
     
     print("training cache")
     await client.train(training_data=embeddings)
@@ -84,12 +84,12 @@ async def main():
     # Run queries
     for i in range(n_queries):
         print("Testing query number: " + str(i))
-        await client.load(embeddings[i], options={"nLoad":index.nprobe})
+        await client.load(embeddings[i], options={"n_load":index.nprobe})
 
         k = 5
         # Record the start time
         start_time = time.time()
-        res = await client.search(k, [embeddings[i]], options={"nprobe":index.nprobe})
+        res = await client.search(k, [embeddings[i]], options={"n_probe":index.nprobe})
         # Record the end time
         end_time = time.time()
         # Calculate latency
@@ -97,7 +97,7 @@ async def main():
         print("latency: " + str(latency))
         _, indices = index.search(np.array([embeddings[i]]), k)
  
-        await client.evict(embeddings[i], options={"nEvict":index.nprobe})
+        await client.evict(embeddings[i], options={"n_evict":index.nprobe})
 
         correct_ids = []
         for j in range(len(indices[0])):
