@@ -172,7 +172,7 @@ The response will be a JSON object containing the fetched data associated with t
 
 ## Requirements
 
-- Python 3.7+
+- Python 3.8+
 - FastAPI
 - Pydantic
 - Uvicorn
