@@ -89,7 +89,7 @@ async def main():
         k = 5
         # Record the start time
         start_time = time.time()
-        res = await client.search(k, [embeddings[i]], options={"n_probe":index.nprobe})
+        res = await client.search(k, [embeddings[i]], options={"n_probe":4})
         # Record the end time
         end_time = time.time()
         # Calculate latency
