@@ -1,6 +1,7 @@
 #include "cache.h"
 #include "args.h"
 #include "session.h"
+#include "exceptions.h"
 
 #include <random>
 #include <iostream>
@@ -136,9 +137,12 @@ void Cache::train(std::shared_ptr<Session> session) {
 
 void Cache::load(std::shared_ptr<Session> session) {
     std::shared_ptr<LoadArgs> args = std::dynamic_pointer_cast<LoadArgs>(session->args);
-    this->core->loadCellWithVec(args->xq, args->nload);
-    
     std::string output("Loaded cell");
+    try {
+        this->core->loadCellWithVec(args->xq, args->nload);
+    } catch (const HttpException& e) {
+        output = e.what();
+    }
     output.copy(session->output_buf, 1024);
     session->do_write(output.size());
 

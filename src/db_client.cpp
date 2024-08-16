@@ -1,5 +1,6 @@
 #include "db_client.h"
-#include "data.h" 
+#include "data.h"
+#include "exceptions.h"
 
 #include <iostream>
 #include <memory>
@@ -70,8 +71,7 @@ void DBClient::search(std::vector<std::string> ids, Data *x) {
         std::cerr << "response.text: " << response.text << std::endl;
         std::cerr << "Request failed. Error: " << response.error.message << std::endl;
 
-        // TODO: handle this gracefully
-        throw;
+        throw HttpException(response.status_code, "Request to vector db failed with status code: " + std::to_string(response.status_code));
     } else {
         rapidjson::Document document;
         document.Parse(response.text.c_str());
