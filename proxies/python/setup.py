@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='periplus_proxy',
+    name='periplus-proxy',
     version='0.1',
     packages=find_packages(),
     install_requires=[
@@ -21,11 +21,11 @@ setup(
     description='A proxy for Periplus to load data through.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/yourusername/mypackage',
+    url='https://github.com/QDL123/Periplus',
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.8',
 )

@@ -1,14 +1,14 @@
 from pydantic import BaseModel
 from typing import List
 
-class StoredObject(BaseModel):
+class Record(BaseModel):
     embedding: List[float]
     document: str
     id: str
     metadata: str
 
-class QueryResult(BaseModel):
-    results: List[StoredObject]
-
-class IdsModel(BaseModel):
+class Query(BaseModel):
     ids: List[str]
+
+class QueryResult(BaseModel):
+    results: List[Record]

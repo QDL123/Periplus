@@ -1,3 +1,19 @@
+Metadata-Version: 2.1
+Name: periplus-proxy
+Version: 0.1
+Summary: A proxy for Periplus to load data through.
+Home-page: https://github.com/QDL123/Periplus
+Author: Quintin Leary
+Author-email: quintindleary@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: pydantic
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+
 # Periplus Proxy
 ![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
@@ -94,19 +110,19 @@ The response will be a JSON object containing the fetched data:
 {
   "results": [
     {
-      "embedding": [0.1, 0.2, 0.3],
+      "embedding": [...],
       "document": "document",
       "id": "id1",
       "metadata": "{}"
     },
     {
-      "embedding": [0.4, 0.5, 0.6],
+      "embedding": [...],
       "document": "document",
       "id": "id2",
       "metadata": "{}"
     },
     {
-      "embedding": [0.7, 0.8, 0.9],
+      "embedding": [...],
       "document": "document",
       "id": "id3",
       "metadata": "{}"
@@ -172,7 +188,7 @@ The response will be a JSON object containing the fetched data associated with t
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.7+
 - FastAPI
 - Pydantic
 - Uvicorn

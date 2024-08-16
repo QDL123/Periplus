@@ -1,7 +1,7 @@
 import asyncio
 import random
 import uuid
-from periplus_client import CacheClient
+from periplus_client import Periplus
 from time import perf_counter
 
 
@@ -35,7 +35,7 @@ async def prepare_cache(client):
     d = 2
 
     print("Initializing")
-    await client.initialize(d=d, db_url=url, options={ "nTotal": 50000 })
+    await client.initialize(d=d, db_url=url, options={ "n_records": 50000 })
 
     print("Generating Training data")
     training_data = generate_training_data(d=d, num_embeddings=50000)
@@ -66,7 +66,7 @@ async def prepare_cache(client):
 
 async def find_cache_hit_prob():
 
-    client = CacheClient("localhost", 13)
+    client = Periplus("localhost", 13)
     print("initializing")
     await client.initialize(d=2, db_url="http://localhost:8000/v1/load_cell")
     print("generating training data")
@@ -101,7 +101,7 @@ async def find_cache_hit_prob():
 async def main():
     print("Starting main")
 
-    client = CacheClient("localhost", 13)
+    client = Periplus("localhost", 13)
 
     data = await prepare_cache(client)
 

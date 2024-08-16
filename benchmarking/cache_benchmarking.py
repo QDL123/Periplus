@@ -2,7 +2,7 @@ import numpy as np
 import struct
 import time
 import asyncio
-from clients.python.client import CacheClient
+from clients.python.client import Periplus
 
 
 # Function to read fvecs file
@@ -52,11 +52,11 @@ async def main():
     # Initialize the cache
     d = 128
     url = 'http://localhost:8000/v1/pinecone'
-    nTotal = 1000000
-    client = CacheClient("localhost", 13)
+    n_records = 1000000
+    client = Periplus("localhost", 13)
     
     print("initializing")
-    await client.initialize(d=d, db_url=url, options={ 'nTotal': nTotal })
+    await client.initialize(d=d, db_url=url, options={ 'n_records': n_records })
 
     print("training")
     await client.train(training_data=training)

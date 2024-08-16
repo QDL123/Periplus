@@ -1,3 +1,18 @@
+Metadata-Version: 2.1
+Name: periplus-client
+Version: 0.1
+Summary: A client library for connecting with Periplus.
+Home-page: https://github.com/QDL123/Periplus
+Author: Quintin Leary
+Author-email: quintindleary@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: asyncio
+
 # Periplus Client Library
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
@@ -35,7 +50,7 @@ client = Periplus(host='localhost', port=8080)
 await client.initialize(
     d=128,
     db_url='http://localhost:5000/proxy',
-    options={'n_records': 500000, 'use_flat': False}
+    options={'nTotal': 500000, 'use_flat': False}
 )
 
 # Train the instance with sample data
