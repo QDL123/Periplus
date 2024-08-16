@@ -1,6 +1,7 @@
 #include "core.h"
 #include "db_client.h"
 #include "data.h"
+#include "exceptions.h"
 
 #include <math.h>
 #include <memory>
@@ -79,7 +80,13 @@ void Core::evictCellWithVec(std::shared_ptr<float[]> xq, size_t nevict) {
 void Core::loadCell(faiss::idx_t target_centroid) {
     Data *x = new Data[this->ids_by_cell[target_centroid].size()];
     // TODO: return the size so if an id doesn't exist anymore it's okay
-    this->db->search(this->ids_by_cell[target_centroid], x);
+    try {
+        this->db->search(this->ids_by_cell[target_centroid], x);
+    } catch (const HttpException& e) {
+        // deallocate x and rethrow
+        delete[] x;
+        throw e;
+    }
 
     faiss::idx_t centroid;
     float distances[1];
