@@ -1,7 +1,7 @@
 import random
 import uuid
 
-from periplus_proxy import ProxyController, IdsModel, QueryResult, StoredObject
+from periplus_proxy import ProxyController, Query, QueryResult, Record
 
 
 stored_objects = []
@@ -26,12 +26,12 @@ def load_test_data(d):
             num = random.uniform(-100, 100)
             embedding.append(num)
 
-        object = StoredObject(embedding=embedding, document=document, id=id, metadata=metadata)
+        object = Record(embedding=embedding, document=document, id=id, metadata=metadata)
         object_indices[id] = len(stored_objects)
         stored_objects.append(object)
 
 
-async def fetch_ids(request: IdsModel) -> QueryResult:
+async def fetch_ids(request: Query) -> QueryResult:
     print("Fetching ids")
     ids = request.ids
     

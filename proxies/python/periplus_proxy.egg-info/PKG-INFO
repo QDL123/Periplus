@@ -1,3 +1,19 @@
+Metadata-Version: 2.1
+Name: periplus-proxy
+Version: 0.1
+Summary: A proxy for Periplus to load data through.
+Home-page: https://github.com/QDL123/Periplus
+Author: Quintin Leary
+Author-email: quintindleary@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: pydantic
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+
 # Periplus Proxy
 ![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)
 

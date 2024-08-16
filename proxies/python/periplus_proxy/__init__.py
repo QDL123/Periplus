@@ -1,5 +1,5 @@
 # __init__.py
 from .controller import ProxyController
-from .models import IdsModel, QueryResult, StoredObject
+from .models import Query, QueryResult, Record
 
-__all__ = ['ProxyController', 'IdsModel', 'QueryResult', 'StoredObject']
+__all__ = ['ProxyController', 'Query', 'QueryResult', 'Record']

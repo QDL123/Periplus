@@ -47,10 +47,11 @@ Currently, the Docker image only supports AMD64 architectures. This constraint s
 Any system using Periplus will consist of 4 components: the vector database, a database proxy which allows Periplus to load data from the database, a Periplus instance, and a client application.
 
 ![Example Periplus App Architecture](assets/periplus-architecture-with-background.png) 
-Example architecture of an application using Periplus
+
+Example architecture of an application using Periplus.
 
 ### The Vector Database
-Any vector database that allows for looking up data by a unique identifier (virtually all of them) will work. Periplus is designed to be most beneficial when working with really large vector collectons (billion-scale) where the index has to mostly live on the file system as opposed to RAM, although that's not a requirement.
+Any vector database that allows for looking up data by a unique identifier (virtually all of them) will work. Periplus is designed to be most beneficial when working with really large vector collectons (billion-scale) where the index has to live on the file system as opposed to RAM, although that's not a requirement.
 
 ### The Vector Database Proxy
 The vector database proxy's purpose is to provide a consistent interface for Periplus to interact with the vector database through. The proxy must implement a REST interface which accepts POST requests of the following form:
@@ -85,7 +86,9 @@ Response:
 }
 ```
 
-To make implementing this endpoint easier, you can you use the periplus-proxy python package which uses FastAPI to set everything up. All the user has to do is implement the following function and pass it as an argument: `async def fetch_ids(request: IdsModel) -> QueryResult`
+To make implementing this endpoint easier, you can you use the periplus-proxy python package which uses FastAPI to set everything up. All the user has to do is implement the following function and pass it as an argument:
+
+`async def fetch_ids(request: Query) -> QueryResult`
 
 For details on how to do this, you can check out the periplus-proxy package [README.md](proxies/python/README.md).
 

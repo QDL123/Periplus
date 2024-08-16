@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, HTTPException
 from pydantic import ValidationError
 from typing import List
 
-from .models import QueryResult, IdsModel
+from .models import QueryResult, Query
 
 class ProxyController:
 
@@ -18,7 +18,7 @@ class ProxyController:
         # TODO: Verify signature to confirm counterparty identity
 
         try:
-            event = IdsModel.parse_raw(payload)
+            event = Query.parse_raw(payload)
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
 

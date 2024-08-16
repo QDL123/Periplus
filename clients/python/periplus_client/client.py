@@ -3,7 +3,8 @@ from collections import namedtuple
 from .connection import Connection
 from .error import PeriplusConnectionError, PeriplusServerError
 
-Document = namedtuple('Document', ['id', 'embedding', 'document', 'metadata'])
+# TODO: Change the name of this tuple to Record everywhere it's used
+Record = namedtuple('Record', ['id', 'embedding', 'document', 'metadata'])
 
 class Periplus:
     def __init__(self, host, port):
@@ -78,11 +79,11 @@ class Periplus:
 
         # Await confirmation the command was successful
         res = await self.conn.receive()
-        if res.decode() != "Initialized cache":
-            # TODO: Insert message from Periplus server into error
-            raise PeriplusServerError(message="ERROR: FAILED TO INITIALIZE CACHE")
-        
         await self.conn.close()
+        if res.decode() != "Initialized cache":
+            message = "[Error: Initialization Failed] " + res.decode()
+            raise PeriplusServerError(message=message, operation=command)
+        
         return True
     
 
@@ -122,11 +123,11 @@ class Periplus:
         await self.conn.send(message)
 
         res = await self.conn.receive()
-        if res.decode() != "Trained cache":
-            # TODO: Insert message from Periplus server into error
-            raise PeriplusServerError(message="ERROR: FAILED TO TRAIN CACHE")
-        
         await self.conn.close()
+        if res.decode() != "Trained cache":
+            message = "[Error: Training Failed] " + res.decode()
+            raise PeriplusServerError(message=message, operation=command)
+        
         return True
     
     
@@ -209,11 +210,11 @@ class Periplus:
         await self.conn.send("\r\n")
 
         res = await self.conn.receive()
-        if res.decode() != "Added vectors":
-            # TODO: Insert message from Periplus server into error
-            raise PeriplusServerError(message="ERROR: FAILED TO ADD VECTORS TO CACHE")
-        
         await self.conn.close()
+        if res.decode() != "Added vectors":
+            message = "[Error: Adding Vectors Failed] " + res.decode()
+            raise PeriplusServerError(message=message, operation=command)
+
         return True
         
     
@@ -259,11 +260,11 @@ class Periplus:
 
         res = await self.conn.receive()
 
-        if res.decode() != "Loaded cell":
-            # TODO: Insert message from Periplus server into error
-            raise PeriplusServerError(message="ERROR: COULD NOT LOAD CELL")
-        
         await self.conn.close()
+        if res.decode() != "Loaded cell":
+            message = "[Error: Loading Failed] " + res.decode()
+            raise PeriplusServerError(message=message, operation=command)
+
         return True
 
 
@@ -294,7 +295,7 @@ class Periplus:
         return list(struct.unpack(f'{num_floats}f', all_data))
 
 
-    async def _deserialize_document(self):
+    async def _deserialize_record(self):
         """ Deserialize structured query results from an already connected TCP socket and return as a namedtuple. """
         # TODO: implement error handling
         # Read first length (8-byte unsigned integer) for ID string
@@ -318,7 +319,7 @@ class Periplus:
         metadata = await self._read_string(metadata_length)
 
         # Return the received data as a namedtuple
-        return Document(id=id_str, embedding=embedding, document=document, metadata=metadata)
+        return Record(id=id_str, embedding=embedding, document=document, metadata=metadata)
 
 
     async def _deserialize_query_results(self, num_queries):
@@ -328,8 +329,8 @@ class Periplus:
             num_results = struct.unpack('i', data)[0]
             results.append([])
             for _ in range(num_results):
-                document = await self._deserialize_document()
-                results[i].append(document)
+                record = await self._deserialize_record()
+                results[i].append(record)
 
         return results
     
@@ -356,10 +357,10 @@ class Periplus:
             default, require_all is true.
 
         Returns:
-        List[List[Document]]: The outer list corresponds to the list of query vectors and each inner list contains the k nearest
-        neighbors in the form of Document tuples. Some inner lists may be of size 0 if the corresponding query vector resulted in 
-        a cache miss. If the length is > 0 but < k, then k was greater than the number of documents contained in the search
-        space. Each document Tuple contains 4 properties: id, embedding, document, and metadata. These will correspond to what was
+        List[List[Record]]: The outer list corresponds to the list of query vectors and each inner list contains the k nearest
+        neighbors in the form of Record tuples. Some inner lists may be of size 0 if the corresponding query vector resulted in 
+        a cache miss. If the length is > 0 but < k, then k was greater than the number of records contained in the search
+        space. Each Record tuple contains 4 properties: id, embedding, document, and metadata. These will correspond to what was
         given to Periplus when loading data from the vector database / database proxy.
         """
         await self._connect()
@@ -386,8 +387,6 @@ class Periplus:
 
         await self.conn.send(message)
 
-
-        # TODO: throw Periplus Server Error if search is unsuccessful
         res = await self._deserialize_query_results(len(xq))
         await self.conn.close()
         return res
@@ -431,8 +430,9 @@ class Periplus:
 
         res = await self.conn.receive()
 
-        if res.decode() != "Evicted cell":
-            raise PeriplusServerError("ERROR: COULD NOT EVICT CELL")
-        
         await self.conn.close()
+        if res.decode() != "Evicted cell":
+            message = "[Error: Evicting Failed] " + res.decode()
+            raise PeriplusServerError(message=message, operation=command)
+        
         return True
