@@ -68,15 +68,8 @@ jobs:
 
       - name: Run Test Driver
         run: |
-          docker run --network my_network --name test_driver_container test_driver_image || echo $? > exit_code.txt
-
-      - name: Get Test Driver Exit Code
-        id: get_test_driver_exit_code
-        run: |
-          if [ ! -f exit_code.txt ]; then
-            docker inspect test_driver_container --format='{{.State.ExitCode}}' > exit_code.txt
-          fi
-          cat exit_code.txt
+          set -e
+          docker run --network my_network --name test_driver_container test_driver_image
 
       - name: Archive test reports
         uses: actions/upload-artifact@v2
@@ -87,7 +80,7 @@ jobs:
       - name: Fail the job if tests failed
         if: failure()
         run: |
-          exit_code=$(cat exit_code.txt)
+          exit_code=$(docker inspect test_driver_container --format='{{.State.ExitCode}}')
           if [ "$exit_code" -ne 0 ]; then
             echo "Tests failed with exit code $exit_code"
             exit $exit_code
