@@ -44,8 +44,16 @@ class Connection:
     async def send(self, message):
         if self.writer is None:
             raise ConnectionError("Client is not connected.")
-        self.writer.write(message.encode('latin1'))
-        await self.writer.drain()
+        
+        try:
+            self.writer.write(message.encode('latin1'))
+            await self.writer.drain()
+        except (ConnectionResetError, BrokenPipeError):
+            # If connection was broken try reconnecting
+            await self.close()
+            await self.connect()
+            self.writer.write(message.encode('latin1'))
+            await self.writer.drain()
 
     async def receive(self, buffer_size=1024):
         if self.reader is None:

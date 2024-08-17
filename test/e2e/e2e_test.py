@@ -36,8 +36,6 @@ def generate_embeddings(d, num_embeddings):
 
 async def main():
     print("Starting e2e tests")
-    print("faiss version")
-    print(faiss.__version__)
     
     # Generate data
     num_docs = 50000
