@@ -26,9 +26,9 @@ public:
     void start();
     void read_command();
     void read_static_args(std::shared_ptr<Args> args);
-    void updated_read_args(std::shared_ptr<Args> args);
+    void read_args(std::shared_ptr<Args> args);
     void read_dynamic_args(std::shared_ptr<Args> args);
-    void do_write(std::size_t length);
+    void async_write(std::size_t length);
     void sync_write(std::size_t length);
 
     enum { max_length = 1024 };
@@ -41,7 +41,7 @@ public:
 private:
     asio::ip::tcp::socket socket_;
     asio::streambuf input_stream;
-    void do_read();
+    // void do_read();
 };
 
 #endif

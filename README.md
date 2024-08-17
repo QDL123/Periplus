@@ -8,7 +8,7 @@
 Periplus is currently in alpha and is not production-ready. The project is under active development, and is not yet recommended for use in production systems.
 
 ## Introduction
-Periplus is an open-source in-memory vector database cache built on Meta's vector similarity search library [FAISS](https://github.com/facebookresearch/faiss). The project can best be thought of as "Redis for vector databases". It's designed to store a dynamically updated subset of a large vector collection entirely in memory while serving queries without interacting with any other nodes at query time. When Periplus receives a query, it first assesses whether it has the releveant part of the index in-residence. If it does, it resolves the query with the appropriate response. If it doesn't, it returns a cache miss and leaves the querier to fetch the data from the database. Periplus is not designed to function in isolation. Instead, it is meant to form a modular and flexible caching layer for a separate vector database which forms the persistance layer. The purpose of this is to enable lower latency and easy horizontal scaling for increasing throughput. For a more detailed description of the inspiration behind Periplus and how it works you can read the announcement blog: [Introducing Periplus: A New Approach to Vector Database Caching](https://medium.com/@quintindleary/ed8fa7a0f234).
+Periplus is an open-source in-memory vector database cache built on Meta's vector similarity search library [FAISS](https://github.com/facebookresearch/faiss). The project can best be thought of as "Redis for vector databases". It's designed to store a dynamically updated subset of a large vector collection entirely in memory while serving queries without interacting with any other nodes at query time. When Periplus receives a query, it first assesses whether it has the relevant part of the index in-residence. If it does, it resolves the query with the appropriate response. If it doesn't, it returns a cache miss and leaves the querier to fetch the data from the database. Periplus is not designed to function in isolation. Instead, it is meant to form a modular and flexible caching layer for a separate vector database which forms the persistance layer. The purpose of this is to enable lower latency and easy horizontal scaling for increasing throughput. For a more detailed description of the inspiration behind Periplus and how it works you can read the announcement blog: [Introducing Periplus: A New Approach to Vector Database Caching](https://medium.com/@quintindleary/ed8fa7a0f234).
 
 ## How It Works
 Periplus uses an inverted file index (IVF) as the basis for cache management. Inverted file indexes partition the vector space into contiguous cells defined by a set of centroid vectors where each cell is defined as the region which is closer to it's centroid than to any other centroid. Queries are then resolved by first computing the distances from the query vector to the set of centroids and then searching only the cells defined by the **n_probe** (search hyperparameter) closest centroids. Periplus takes advantage of this by keeping a subset of these cells in residence at any given time and only resolving queries which are relevant to that subset while rejecting the ones that aren't as cache misses. Periplus loads and evicts entire IVF cells at a time to maintain the integrity of the index and ensure equivalent recall (on cache hits) to a standard IVF index. IVF cells are loaded by querying the vector database via a proxy with a list of ids of vectors which Periplus maintains to track which vectors occupy which cells. These operations can be invoked by the user using **LOAD**, **SEARCH**, and **EVICT** commands. For details, see the [Periplus Commands](README.md#periplus-commands) section below.
@@ -21,8 +21,8 @@ Periplus can either be run as a Docker container or it can be built from source 
 Currently, the Docker image only supports AMD64 architectures. This constraint stems from the base image, but more architectures will be supported in the near future. There are 2 ways to run Periplus as a container: download the official Docker image from Dockerhub (recommended) or build the image yourself. The first step in either case is to install Docker if you haven't already. The instructions to do so can be found [here](https://docs.docker.com/get-docker/).
 
 #### Using the Official image
-1. Download the image by running:   `docker image pull <TODO: insert image name here>`. 
-2. Run the container:       `docker run -p 3000:3000 <TODO: insert image name here>`
+1. Download the image by running:   `docker image pull qdl123/periplus:latest`. 
+2. Run the container:       `docker run -p 3000:3000 qdl123/periplus:latest`
 
 #### Building the image
 1. Clone the repository: ```git clone https://github.com/QDL123/Periplus.git```
@@ -74,7 +74,7 @@ Response:
     "results": [
         {
             "id": "String",
-            "embedding": [0.1, 0.2, 0.3], // Floating point numbers
+            "embedding": [0.1, 0.2, 0.3],
             "document": "String",
             "metdata": "String"
         }

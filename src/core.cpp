@@ -196,9 +196,6 @@ void Core::add(size_t num_docs, std::vector<std::shared_ptr<char[]>>& ids, std::
     this->quantizer->search(num_docs, embeddings.get(), 1, distances, updated_centroids);
     delete[] distances;
     for (size_t i = 0; i < num_docs; i++) {
-        if (i % 100 == 0) {
-            std::cout << "Adding " << i << "th vector to ids_by_cell" << std::endl;
-        }
         assert(this->isNullTerminated(ids[i].get(), 100));
         std::string id(ids[i].get());
         this->ids_by_cell[updated_centroids[i]].push_back(id);

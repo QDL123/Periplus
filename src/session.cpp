@@ -32,7 +32,7 @@ void Session::read_command() {
 }
 
 
-void Session::updated_read_args(std::shared_ptr<Args> args) {
+void Session::read_args(std::shared_ptr<Args> args) {
     auto self(shared_from_this());
     this->args = args;
 
@@ -112,32 +112,11 @@ void Session::read_static_args(std::shared_ptr<Args> args) {
     std::cout << "Called asio::async_read" << std::endl;
 }
 
-void Session::do_read() {
-    // maintain a shared pointer to the session in the lambda to prevent the session from destructing before
-    // the callback completes
-    auto self(shared_from_this());
-    socket_.async_read_some(asio::buffer(output_buf, max_length),
-        [this, self](std::error_code ec, std::size_t length) {
-            if (!ec) {
-                // Determine if we have a full command
-
-                // Process the command
-
-                do_write(length);
-            } else {
-                // log the error
-            }
-        });
-}
-
-void Session::do_write(size_t length) {
+void Session::async_write(size_t length) {
     auto self(shared_from_this());
     asio::async_write(socket_, asio::buffer(output_buf, length),
         [this, self](std::error_code ec, std::size_t /*length*/) {
-            if (!ec) {
-                // do_read();
-                std::cout << "RESPONDED!" << std::endl;
-            } else {
+            if (ec) {
                 std::cout << "An error occurred responding to the client" << std::endl;
             }
         });

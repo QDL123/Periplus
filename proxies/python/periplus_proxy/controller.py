@@ -15,8 +15,6 @@ class ProxyController:
     async def handle_load_data(self, request: Request):
         payload = await request.body()
 
-        # TODO: Verify signature to confirm counterparty identity
-
         try:
             event = Query.parse_raw(payload)
         except ValidationError as e:

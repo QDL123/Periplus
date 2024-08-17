@@ -3,7 +3,6 @@ from collections import namedtuple
 from .connection import Connection
 from .error import PeriplusConnectionError, PeriplusServerError
 
-# TODO: Change the name of this tuple to Record everywhere it's used
 Record = namedtuple('Record', ['id', 'embedding', 'document', 'metadata'])
 
 class Periplus:
@@ -79,6 +78,7 @@ class Periplus:
 
         # Await confirmation the command was successful
         res = await self.conn.receive()
+        # TODO: Recycle TCP connection while ensuring proper resource clean up
         await self.conn.close()
         if res.decode() != "Initialized cache":
             message = "[Error: Initialization Failed] " + res.decode()
@@ -123,6 +123,8 @@ class Periplus:
         await self.conn.send(message)
 
         res = await self.conn.receive()
+
+        # TODO: Recycle TCP connection while ensuring proper resource clean up
         await self.conn.close()
         if res.decode() != "Trained cache":
             message = "[Error: Training Failed] " + res.decode()
@@ -210,6 +212,7 @@ class Periplus:
         await self.conn.send("\r\n")
 
         res = await self.conn.receive()
+        # TODO: Recycle TCP connection while ensuring proper resource clean up
         await self.conn.close()
         if res.decode() != "Added vectors":
             message = "[Error: Adding Vectors Failed] " + res.decode()
@@ -260,6 +263,7 @@ class Periplus:
 
         res = await self.conn.receive()
 
+        # TODO: Recycle TCP connection while ensuring proper resource clean up
         await self.conn.close()
         if res.decode() != "Loaded cell":
             message = "[Error: Loading Failed] " + res.decode()
@@ -388,6 +392,8 @@ class Periplus:
         await self.conn.send(message)
 
         res = await self._deserialize_query_results(len(xq))
+
+        # TODO: Recycle TCP connection while ensuring proper resource clean up
         await self.conn.close()
         return res
     
@@ -430,6 +436,7 @@ class Periplus:
 
         res = await self.conn.receive()
 
+        # TODO: Recycle TCP connection while ensuring proper resource clean up
         await self.conn.close()
         if res.decode() != "Evicted cell":
             message = "[Error: Evicting Failed] " + res.decode()

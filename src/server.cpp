@@ -27,6 +27,7 @@ void TcpServer::do_accept() {
                 session->start();
             }
 
+            std::cout << "Listening for new sessions" << std::endl;
             // Listen for more connections
             do_accept();
         });

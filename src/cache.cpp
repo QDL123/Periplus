@@ -21,22 +21,22 @@ void Cache::processCommand(std::shared_ptr<Session> session, std::string command
             if (command == std::string("SEARCH")) {
                 output = "Parsing search command";
                 std::shared_ptr<SearchArgs> args = std::make_shared<SearchArgs>();
-                session->updated_read_args(args);
+                session->read_args(args);
                 break;
             } else if (command == std::string("ADD")) {
                 output = "Parsing add command";
                 std::shared_ptr<AddArgs> args = std::make_shared<AddArgs>();
-                session->updated_read_args(args);
+                session->read_args(args);
                 break;
             } else if (command == std::string("LOAD")) {
                 output = "Parsing load command!";
                 std::shared_ptr<LoadArgs> args = std::make_shared<LoadArgs>();
-                session->updated_read_args(args);
+                session->read_args(args);
                 break;
             } else if (command == std::string("EVICT")) {
                 output = "Parsing evict command!";
                 std::shared_ptr<EvictArgs> args = std::make_shared<EvictArgs>();
-                session->updated_read_args(args);
+                session->read_args(args);
                 break;
             } else {
                 std::cout << "DIDn't match READY command" << std::endl;
@@ -45,14 +45,14 @@ void Cache::processCommand(std::shared_ptr<Session> session, std::string command
             if (command == std::string("TRAIN")){
                 output = "Parsing train command!";
                 std::shared_ptr<TrainArgs> args = std::make_shared<TrainArgs>();
-                session->updated_read_args(args);
+                session->read_args(args);
                 break;
             }
         case UNINITIALIZED:
             if (command == std::string("INITIALIZE")) {
                 output = "Processing initialize command!";
                 std::shared_ptr<InitializeArgs> args = std::make_shared<InitializeArgs>();
-                session->updated_read_args(args);
+                session->read_args(args);
                 break;
             }
         default:
@@ -67,24 +67,27 @@ void Cache::process_args(std::shared_ptr<Session> session) {
     // We now have a completed args object
     // Determine the command
     if (session->args->get_command() == SEARCH) {
-        std::cout << "Performing search" << std::endl;
         this->search(session);
+        std::cout << "Completed SEARCH execution\n";
     } else if (session->args->get_command() == ADD) {
-        std::cout << "Performing add" << std::endl;
         this->add(session);
+        std::cout << "Completed ADD execution\n";
     } else if (session->args->get_command() == INITIALIZE) {
-        std::cout << "Performing initialization" << std::endl;
         this->initialize(session);
+        std::cout << "Completed INITIALIZE execution\n";
     } else if (session->args->get_command() == TRAIN) {
-        std::cout << "Performing training" << std::endl;
         this->train(session);
+        std::cout << "Completed TRAIN execution\n";
     } else if (session->args->get_command() == LOAD) {
-        std::cout << "Performing load" << std::endl;
         this->load(session);
+        std::cout << "Completed LOAD execution\n";
     } else if (session->args->get_command() == EVICT) {
-        std::cout << "Performing evict" << std::endl;
         this->evict(session);
+        std::cout << "Completed EVICT execution\n";
     }
+
+    // Allow for multiple commands in a single session
+    session->read_command();
 }
 
 size_t Cache::determineNCells(size_t nTotal) {
@@ -108,13 +111,9 @@ void Cache::initialize(std::shared_ptr<Session> session) {
     std::string output("Initialized cache");
     output.copy(session->output_buf, 1024);
 
-    session->do_write(output.size());
+    session->async_write(output.size());
 
     this->status = INITIALIZED;
-
-    std::cout << "Listening for more commands" << std::endl;
-    // Listen for more commands
-    session->read_command();
 }
 
 void Cache::train(std::shared_ptr<Session> session) {
@@ -129,10 +128,7 @@ void Cache::train(std::shared_ptr<Session> session) {
     std::string output("Trained cache");
     output.copy(session->output_buf, 1024);
 
-    session->do_write(output.size());
-
-    // Listen for more commands
-    session->read_command();
+    session->async_write(output.size());
 }
 
 void Cache::load(std::shared_ptr<Session> session) {
@@ -144,10 +140,7 @@ void Cache::load(std::shared_ptr<Session> session) {
         output = e.what();
     }
     output.copy(session->output_buf, 1024);
-    session->do_write(output.size());
-
-    // Listen for more commands
-    session->read_command();
+    session->async_write(output.size());
 }
 
 void Cache::search(std::shared_ptr<Session> session) {
@@ -157,14 +150,6 @@ void Cache::search(std::shared_ptr<Session> session) {
 
     bool require_all = true;
     this->core->search(args->n, args->xq.get(), args->k, args->nprobe, args->require_all, results, cacheHits);
-    std::cout << "cacheHits: ";
-    for (size_t i = 0; i < args->n; i++) {
-        std::cout << cacheHits[i];
-        if (i < args->n - 1) {
-            std::cout << ", ";
-        }
-    }
-    std::cout << '\n';
 
     for (size_t i = 0; i < args->n; i++) {
         std::memcpy(session->output_buf, &cacheHits[i], sizeof(int));
@@ -183,8 +168,6 @@ void Cache::search(std::shared_ptr<Session> session) {
             session->sync_write(bytes.size() - l);
         }
     }
-
-    session->read_command();
 }
 
 void Cache::evict(std::shared_ptr<Session> session) {
@@ -193,20 +176,17 @@ void Cache::evict(std::shared_ptr<Session> session) {
     
     std::string output("Evicted cell");
     output.copy(session->output_buf, 1024);
-    session->do_write(output.size());
-
-    // Listen for more commands
-    session->read_command();
+    session->async_write(output.size());
 }
 
 void Cache::add(std::shared_ptr<Session> session) {
     std::shared_ptr<AddArgs> args = std::dynamic_pointer_cast<AddArgs>(session->args);
+    std::cout << "Adding " << args->num_docs << " vectors" << std::endl;
     this->core->add(args->num_docs, args->ids, args->embeddings);
 
     std::string output("Added vectors");
     output.copy(session->output_buf, 1024);
-    session->do_write(output.size());
-    session->read_command();
+    session->async_write(output.size());
 }
 
 Cache::~Cache() {
