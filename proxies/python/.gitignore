@@ -1,2 +1,4 @@
 __pycache__/*
-periplus-proxy.egg-info/*
+build/*
+dist/*
+*.egg-info/

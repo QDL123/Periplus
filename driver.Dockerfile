@@ -17,4 +17,4 @@ RUN apt-get update && apt-get install -y netcat-openbsd
 RUN conda env create -f environment.yml
 
 # Run the script using the conda environment's python interpreter
-CMD ["bash", "-c", "source activate e2e_env && python3 e2e_test.py"]
+CMD ["bash", "-c", "source activate e2e_env && python3 e2e_test.py --periplus-host periplus --proxy-host proxy"]
