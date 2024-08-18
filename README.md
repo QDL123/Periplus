@@ -2,6 +2,7 @@
 
 [![CI Pipeline](https://github.com/QDL123/Periplus/actions/workflows/ci.yaml/badge.svg)](https://github.com/QDL123/Periplus/actions/workflows/ci.yaml)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/qdl123/periplus?label=latest)
 
 
 ## ***Warning: Periplus is in Alpha***
@@ -92,7 +93,7 @@ For details on how to do this, you can check out the periplus-proxy package [REA
 Follow the instructions [above](README.md#running-periplus) to start up a Periplus instance.
 
 ### Client Application
-To interact with your Periplus instance, use the Periplus client library. Currently only python is supported. For details on the client library, you can view it's README.md [here](clients/python/README.md).
+To interact with your Periplus instance, use the Periplus client library. Currently only python is supported. For details on the client library, you can view it's [README.md](clients/python/README.md).
 
 #### Periplus Commands
 1. **INITIALIZE**: This is the setup command for Periplus. It must be called before any other command and any subsequent **INITIALIZE** calls will wipe all the data and reset the Periplus instance. There are 2 required arguments: d (dimensionality of the vector collection), and db_url (url of the database proxy endpoint used to load data). There is also an optional options object argument with 2 available options: **nTotal** and **use_flat**. The first, **nTotal**, is an estimate of the total number of vectors in the collection. This is used to optimize the number of IVF cells to use. If not specified, Periplus will pick a middle ground which can lead to suboptimal performance. The second, **use_flat**, is a boolean which instructs Periplus to use a flat index instead of applying any product quantization (PQ). By default this value is false, in which case product quantization will be applied if the vectors are large enough and easily divisible into subvectors. If set to true, a flat IVF index will be used instead.
@@ -149,14 +150,7 @@ await client.evict(embeddings[0])
 ### Coming Soon!
 
 ## Contributing
-We welcome contributions to the Periplus! To contribute:
-
-- Fork the repository.
-- Create a new branch: git checkout -b feature/your-feature-name.
-- Make your changes.
-- Commit your changes: git commit -m 'Add some feature'.
-- Push to the branch: git push origin feature/your-feature-name.
-- Open a pull request.
+We welcome contributions to Periplus! To learn how to get started, take a look at the [Contribution Guide](/CONTRIBUTING.md).
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.

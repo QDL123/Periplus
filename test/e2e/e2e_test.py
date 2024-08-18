@@ -5,6 +5,7 @@ import faiss
 import math
 import time
 import numpy as np
+import argparse
 from periplus_client import Periplus
 
 
@@ -36,13 +37,18 @@ def generate_embeddings(d, num_embeddings):
 
 async def main():
     print("Starting e2e tests")
+
+    # Create the parser
+    parser = argparse.ArgumentParser(description="A simple Python program to read command-line arguments")
+    parser.add_argument("--periplus-host", type=str, help="Specify what host Periplus is running on", default="localhost")
+    parser.add_argument("--proxy-host", type=str, help="Specify what host the proxy is running on", default="localhost")
+    args = parser.parse_args()
     
     # Generate data
     num_docs = 50000
     print("generating ids")
     ids = generate_ids(num_docs)
-    url = "http://proxy:8000/api/v1/load_data"
-    # url = "http://localhost:8000/api/v1/load_data"
+    url = f"http://{args.proxy_host}:8000/api/v1/load_data"
     d = 128
     numCells = int(4 * math.sqrt(num_docs))
     print("generating embeddings")
@@ -64,8 +70,7 @@ async def main():
 
 
     # Initialize the cache
-    client = Periplus("periplus", 3000)
-    # client = Periplus("localhost", 3000)
+    client = Periplus(args.periplus_host, 3000)
 
     print("initializing cache")
     await client.initialize(d=d, db_url=url, options={"n_records":num_docs, "use_flat": True})
