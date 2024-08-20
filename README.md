@@ -32,7 +32,7 @@ Currently, the Docker image only supports AMD64 architectures. This constraint s
 4. Run the container: `docker run -p 3000:3000 periplus-image .`
 
 
- ### 🚧 Building Periplus from source
+ ### 🛠️ Building Periplus from source
  Periplus uses CMake for it's build system. It expects all dependencies to have pre-compiled binaries installed via Homebrew. Homebrew is supported by MacOS, Ubuntu, and WSL if you're on Windows. Periplus has been built on MacOS/ARM64 and Ubuntu/AMD64. All other operating system and architecture combinations are untested. To build Periplus from source, follow the following steps:
 
  1. Install Homebrew: Visit the official homebrew site [here](https://brew.sh/) for installation instructions.
