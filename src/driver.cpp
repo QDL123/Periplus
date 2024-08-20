@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 
         // Need to give io_context work before calling run
         TcpServer server(io_context, port);
-        std::cout << "Server starting up on port: " << port << std::endl;
+        std::cout << "Periplus starting up on port: " << port << std::endl;
 
         std::vector<std::thread> threads;
         // TODO: Enable multithreading (requires synchronization)
